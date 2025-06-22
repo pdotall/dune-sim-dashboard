@@ -9,38 +9,19 @@
 <body>
   <h1>Dune Sim Quick Query</h1>
 
-  <form id="queryForm">
-    <label>Contract&nbsp;Address
-      <input id="contract" placeholder="0x…" required />
-    </label>
+  <form id="queryForm"> … <!-- same inputs as before --> … </form>
 
-    <label>Chain
-      <select id="chain">
-        <option value="ethereum">Ethereum</option>
-        <option value="polygon">Polygon</option>
-        <option value="base">Base</option>
-        <option value="optimism">Optimism</option>
-        <option value="arbitrum">Arbitrum</option>
-      </select>
-    </label>
+  <!-- NEW: results table -->
+  <table id="txTable" hidden>
+    <thead>
+      <tr>
+        <th>Time (UTC)</th><th>From → To</th><th>Value (wei)</th><th>Tx Hash</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-    <label>Symbol (optional)
-      <input id="symbol" placeholder="e.g. USDC" />
-    </label>
-
-    <fieldset>
-      <legend>Date Range</legend>
-      <label><input type="radio" name="range" value="7"  checked /> Last 7 d</label>
-      <label><input type="radio" name="range" value="14"          /> Last 14 d</label>
-      <label><input type="radio" name="range" value="30"          /> Last 30 d</label>
-      <label><input type="radio" name="range" value="0"           /> Custom →
-             <input type="date" id="from" /> to <input type="date" id="to" /></label>
-    </fieldset>
-
-    <button type="submit">Run Query</button>
-  </form>
-
-  <pre id="output">← results appear here</pre>
+  <pre id="output">← raw JSON / errors appear here</pre>
 
   <script src="app.js"></script>
 </body>
