@@ -1,29 +1,54 @@
-const endpoint = "https://sim.example.workers.dev/v1"; // your Worker or the direct https://api.sim.dune.com
+/* =======================  app.js  ======================= */
 
-document.getElementById("queryForm").addEventListener("submit", async (e) => {
+/* --- CHANGE THIS to your Worker URL (keep /v1) --- */
+const proxyBase = "https://smart-money.pdotcapital.workers.dev/v1";
+
+const CHAIN_IDS = { ethereum: 1, polygon: 137, base: 8453, optimism: 10, arbitrum: 42161 };
+
+const out  = document.getElementById("output");
+const form = document.getElementById("queryForm");
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  out.textContent = "⏳ Running…";
 
-  const addr   = document.getElementById("contract").value.trim();
-  const chain  = document.getElementById("chain").value;
-  const symbol = document.getElementById("symbol").value.trim();
+  try {
+    /* ─────── collect inputs ─────── */
+    const addr   = document.getElementById("contract").value.trim().toLowerCase();
+    const chain  = document.getElementById("chain").value;
+    const symbol = document.getElementById("symbol").value.trim();      // not used yet
+    const range  = new FormData(form).get("range");
 
-  // work out the date window
-  const range  = new FormData(e.target).get("range");
-  const now    = new Date();
-  let from, to = now.toISOString();
-  if (range === "custom") {
-    from = new Date(document.getElementById("from").value).toISOString();
-  } else {
-    const days = parseInt(range);
-    from = new Date(now - days * 864e5).toISOString();
+    const chainId = CHAIN_IDS[chain];
+    if (!chainId) throw new Error(`Unknown chain “${chain}”`);
+
+    /* ─────── work out dates ─────── */
+    const nowISO  = new Date().toISOString();
+    let   fromISO = "";
+    if (range === "0") {                       // custom
+      const from = document.getElementById("from").value;
+      const to   = document.getElementById("to").value;
+      if (!from || !to) throw new Error("Pick both custom dates");
+      fromISO = new Date(from).toISOString();
+      nowISO  = new Date(to).toISOString();
+    } else {
+      const days = +range;                     // 7,14,30
+      fromISO = new Date(Date.now() - days * 864e5).toISOString();
+    }
+
+    /* ─────── build Sim URL ───────
+       /evm/transactions supports ?from & ?to, good demo endpoint        */
+    const url = `${proxyBase}/evm/transactions/${addr}` +
+                `?chain_ids=${chainId}&from=${fromISO}&to=${nowISO}&limit=100`;
+
+    /* ─────── call Sim via proxy ─────── */
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const json = await res.json();
+
+    out.textContent = JSON.stringify(json, null, 2);
+  } catch (err) {
+    console.error(err);
+    out.textContent = `❌ ${err.message}`;
   }
-
-  // Example call: token holders for the contract
-  const url = `${endpoint}/evm/token-holders/${addr}?chain=${chain}&from=${from}&to=${to}`;
-
-  const res  = await fetch(url);               // if not proxied: add {headers:{'X-Sim-Api-Key': 'YOUR_KEY'}}
-  const data = await res.json();
-
-  document.getElementById("output").textContent =
-    JSON.stringify(data, null, 2);
 });
