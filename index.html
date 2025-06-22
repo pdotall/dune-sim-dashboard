@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dune Sim Quick Query</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Dune Sim Quick Query</h1>
+
+  <form id="queryForm">
+    <label>Contract&nbsp;Address <input id="contract" required /></label>
+    <label>Chain
+      <select id="chain">
+        <option value="ethereum">Ethereum</option>
+        <option value="polygon">Polygon</option>
+        <!-- add more as needed -->
+      </select>
+    </label>
+    <label>Symbol (optional) <input id="symbol" /></label>
+
+    <fieldset>
+      <legend>Date Range</legend>
+      <label><input type="radio" name="range" value="7d" checked /> Last 7 d</label>
+      <label><input type="radio" name="range" value="14d" /> Last 14 d</label>
+      <label><input type="radio" name="range" value="30d" /> Last 30 d</label>
+      <label><input type="radio" name="range" value="custom" /> Custom →
+             <input type="date" id="from" /> to <input type="date" id="to" /></label>
+    </fieldset>
+
+    <button type="submit">Run Query</button>
+  </form>
+
+  <pre id="output"></pre>
+
+  <script src="app.js"></script>
+</body>
+</html>
