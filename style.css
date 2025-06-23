@@ -3,9 +3,13 @@ h1     { margin-bottom: 1rem }
 form   { display: grid; gap: 1rem }
 label, fieldset { display: flex; flex-direction: column; gap: .25rem }
 fieldset label  { flex-direction: row; align-items: center; gap: .4rem }
-button { padding: .5rem 1rem; cursor: pointer }
+button { padding: .4rem 1rem; cursor: pointer }
 
-table  { width: 100%; border-collapse: collapse; margin-top: 1.5rem }
+#pageSizeBar { margin-top: 1rem; font-size: .9rem }
+#pager       { margin-top: .5rem; display: flex; gap: .8rem; align-items: center }
+#pager button{ padding: .25rem .8rem }
+
+table  { width: 100%; border-collapse: collapse; margin-top: 1rem }
 th, td { border: 1px solid #ccc; padding: .4rem; font-size: .9rem }
 th     { background: #eee }
 

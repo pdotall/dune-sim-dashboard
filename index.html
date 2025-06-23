@@ -36,6 +36,17 @@
     <button type="submit">Run Query</button>
   </form>
 
+  <!-- page-size selector -->
+  <div id="pageSizeBar" hidden>
+    Rows per page:
+    <select id="pageSize">
+      <option value="25" selected>25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  </div>
+
+  <!-- transactions table -->
   <table id="txTable" hidden>
     <thead>
       <tr>
@@ -44,6 +55,13 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <!-- pagination nav -->
+  <div id="pager" hidden>
+    <button id="prevBtn">« Prev</button>
+    <span id="pageInfo"></span>
+    <button id="nextBtn">Next »</button>
+  </div>
 
   <pre id="output">← results / errors appear here</pre>
 
