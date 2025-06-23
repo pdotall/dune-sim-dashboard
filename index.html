@@ -11,7 +11,7 @@
 
   <form id="queryForm">
     <label>Contract&nbsp;Address
-      <input id="contract" placeholder="0x…" required />
+      <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
     </label>
 
     <label>Chain
@@ -24,26 +24,22 @@
       </select>
     </label>
 
-    <label>Symbol (optional)
-      <input id="symbol" placeholder="e.g. USDC" />
-    </label>
-
     <fieldset>
       <legend>Date Range</legend>
-      <label><input type="radio" name="range" value="7"  checked /> Last&nbsp;7d</label>
-      <label><input type="radio" name="range" value="14"         /> Last&nbsp;14d</label>
-      <label><input type="radio" name="range" value="30"         /> Last&nbsp;30d</label>
+      <label><input type="radio" name="range" value="7"  checked /> Last 7 d</label>
+      <label><input type="radio" name="range" value="14"         /> Last 14 d</label>
+      <label><input type="radio" name="range" value="30"         /> Last 30 d</label>
       <label><input type="radio" name="range" value="0"          /> Custom →
              <input type="date" id="from" /> to <input type="date" id="to" /></label>
     </fieldset>
 
-    <button type="submit">Run&nbsp;Query</button>
+    <button type="submit">Run Query</button>
   </form>
 
   <table id="txTable" hidden>
     <thead>
       <tr>
-        <th>Time&nbsp;(UTC)</th><th>From&nbsp;→&nbsp;To</th><th>Value&nbsp;(wei)</th><th>Tx&nbsp;Hash</th>
+        <th>Time (UTC)</th><th>From → To</th><th>Value (wei)</th><th>Tx Hash</th>
       </tr>
     </thead>
     <tbody></tbody>
