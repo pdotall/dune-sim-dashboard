@@ -1,130 +1,126 @@
-/* ========= app.js (scope bug fixed) ========= */
+/* ---- app.js  (fast aggregate version) ---- */
 
-const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
-const CHAIN_IDS = { ethereum:1, polygon:137, base:8453, optimism:10, arbitrum:42161 };
+const proxy  = "https://smart-money.pdotcapital.workers.dev/v1";
+const CHAINS = { ethereum:1, polygon:137, base:8453, optimism:10, arbitrum:42161 };
 
-const form   = document.getElementById("queryForm");
-const out    = document.getElementById("output");
-const tbl    = document.getElementById("txTable");
-const tbody  = tbl.querySelector("tbody");
-const sizeBar= document.getElementById("pageSizeBar");
-const pager  = document.getElementById("pager");
-sizeBar.hidden = pager.hidden = true;
+const out  = document.getElementById("output");
+const tbody= document.querySelector("#txTable tbody");
+const tbl  = document.getElementById("txTable");
 
-form.addEventListener("submit", async (e)=>{
+document.getElementById("queryForm").addEventListener("submit", run);
+
+async function run(e){
   e.preventDefault();
-  tbody.innerHTML = "";  tbl.hidden = true;
-  out.textContent = "⏳ Loading holders…";
+  tbl.hidden = true; tbody.innerHTML = "";
+  out.textContent = "⏳ fetching holders…";
 
   try {
     /* inputs */
-    const addrField = document.getElementById("contract");
-    if (!addrField.checkValidity()) throw new Error("Enter a valid 0x address.");
-    const token   = addrField.value.toLowerCase();
-    const chainId = CHAIN_IDS[document.getElementById("chain").value];
+    const token = contract().toLowerCase();
+    const chainId = CHAINS[document.getElementById("chain").value];
+    const {fromMs, toMs} = windowMs();
 
-    /* window */
-    const range = new FormData(form).get("range");
-    const nowMs = Date.now();
-    let fromMs  = 0, toMs = nowMs;
-    if (range === "0") {
-      const from = new Date(document.getElementById("from").value).getTime();
-      const to   = new Date(document.getElementById("to").value).getTime();
-      if (!from || !to) throw new Error("Pick both custom dates.");
-      fromMs = from; toMs = to;
-    } else {
-      fromMs = nowMs - (+range)*864e5;
-    }
+    /* 1. current balances */
+    const holders = await fetchHolders(token, chainId);
 
-    /* 1. holders */
-    const holders = [];
-    let hURL = `${proxy}/evm/token-holders/${chainId}/${token}?limit=100`;
-    while (hURL && holders.length < 500) {
-      const res = await fetch(hURL); if (!res.ok) throw new Error(await res.text());
-      const j   = await res.json();
-      holders.push(...j.holders);
-      hURL = j.next_offset
-        ? `${proxy}/evm/token-holders/${chainId}/${token}?limit=100&offset=${encodeURIComponent(j.next_offset)}`
-        : null;
-    }
-    out.textContent = `⏳ ${holders.length} holders fetched – aggregating activity…`;
+    /* 2. aggregate transfers once, not per wallet */
+    out.textContent = "⏳ scanning transfers…";
+    const stats = await aggregateTransfers(token, chainId, fromMs, toMs);
 
-    /* 2. activity per holder (concurrency-limited) */
-    const limit = 3;
-    const queue = holders.slice();
-    const results = [];
-
-    async function worker(){
-      while(queue.length){
-        const h = queue.pop();
-        const stats = await fetchStats(h.wallet_address, fromMs, toMs, token);
-        results.push({
-          owner: h.wallet_address.toLowerCase(),
-          balance: BigInt(h.balance),
-          inCount: stats.inCount,
-          inAmount: stats.inAmount,
-          outCount: stats.outCount,
-          outAmount: stats.outAmount
-        });
-        out.textContent = `⏳ processed ${results.length}/${holders.length}`;
-      }
-    }
-    await Promise.all(Array.from({length:limit}, worker));
-
-    /* 3. render */
-    results.sort((a,b)=> Number(b.balance - a.balance));
-    tbody.innerHTML = "";
+    /* 3. merge + render */
     const dec = await lookupDecimals(token, chainId);
-    results.forEach(r=>{
-      const row = tbody.insertRow();
-      row.insertCell().textContent = r.owner.slice(0,10)+"…";
-      row.insertCell().textContent = format(r.balance, dec);
-      row.insertCell().textContent = r.inCount;
-      row.insertCell().textContent = format(r.inAmount, dec);
-      row.insertCell().textContent = r.outCount;
-      row.insertCell().textContent = format(r.outAmount, dec);
+    const rows = holders.map(h=>{
+      const s = stats.get(h.wallet_address.toLowerCase()) || {};
+      return {
+        owner:   h.wallet_address,
+        balance: BigInt(h.balance),
+        inC:  s.inC  || 0,
+        inA:  s.inA  || 0n,
+        outC: s.outC || 0,
+        outA: s.outA || 0n
+      };
+    }).sort((a,b)=>Number(b.balance - a.balance));
+
+    rows.forEach(r=>{
+      const tr = tbody.insertRow();
+      tr.insertCell().textContent = r.owner.slice(0,10)+"…";
+      tr.insertCell().textContent = fmt(r.balance,dec);
+      tr.insertCell().textContent = r.inC;
+      tr.insertCell().textContent = fmt(r.inA,dec);
+      tr.insertCell().textContent = r.outC;
+      tr.insertCell().textContent = fmt(r.outA,dec);
     });
     tbl.hidden = false;
-    out.textContent = `✅ done – ${results.length} rows`;
-  } catch(err){ console.error(err); out.textContent = `❌ ${err.message}`; }
-});
-
-/* ---- helpers ---- */
-
-async function fetchStats(wallet, fromMs, toMs, token){
-  let url = `${proxy}/evm/activity/${wallet}?limit=250`;
-  let inC=0n,inAmt=0n,outC=0n,outAmt=0n;
-
-  while(url){
-    const r = await fetch(url); if(!r.ok) throw new Error("activity "+await r.text());
-    const j = await r.json();
-    for(const a of j.activity){
-      const ts = new Date(a.block_time).getTime();
-      if (ts < fromMs) return {inCount:Number(inC), outCount:Number(outC),
-                               inAmount:inAmt, outAmount:outAmt};
-      if (ts > toMs) continue;
-      if (a.asset_type!=="erc20" || a.token_address.toLowerCase()!==token) continue;
-
-      if (a.type==="receive"){ inC++; inAmt += BigInt(a.value); }
-      else if (a.type==="send"){ outC++; outAmt += BigInt(a.value); }
-    }
-    url = j.next_offset
-      ? `${proxy}/evm/activity/${wallet}?limit=250&offset=${encodeURIComponent(j.next_offset)}`
-      : null;
+    out.textContent = `✅ ${rows.length} holders processed`;
+  } catch(err){
+    console.error(err); out.textContent = `❌ ${err.message}`;
   }
-  return {inCount:Number(inC), outCount:Number(outC), inAmount:inAmt, outAmount:outAmt};
+}
+
+/* -------- helpers -------- */
+
+function contract(){ return document.getElementById("contract").value.trim(); }
+
+function windowMs(){
+  const range = new FormData(document.getElementById("queryForm")).get("range");
+  const now = Date.now();
+  if(range==="0"){
+    const f = new Date(document.getElementById("from").value).getTime();
+    const t = new Date(document.getElementById("to").value).getTime();
+    if(!f||!t) throw new Error("pick custom dates"); return {fromMs:f,toMs:t};
+  }
+  return {fromMs: now - (+range)*864e5, toMs: now};
+}
+
+async function fetchHolders(token, chainId){
+  let url = `${proxy}/evm/token-holders/${chainId}/${token}?limit=100`;
+  const all=[];
+  while(url){
+    const r=await fetch(url); if(!r.ok) throw new Error(await r.text());
+    const j=await r.json();   all.push(...j.holders);
+    url = j.next_offset ? `${proxy}/evm/token-holders/${chainId}/${token}?limit=100&offset=${encodeURIComponent(j.next_offset)}` : null;
+  }
+  return all;
+}
+
+async function aggregateTransfers(token, chainId, fromMs, toMs){
+  const m = new Map();
+  let url = `${proxy}/evm/activity/${token}?chain_ids=${chainId}&limit=1000`;
+  while(url){
+    const r=await fetch(url); if(!r.ok) throw new Error(await r.text());
+    const j=await r.json();
+    for(const a of j.activity){
+      if(a.asset_type!=="erc20") continue;
+      const ts = new Date(a.block_time).getTime();
+      if(ts<fromMs) return m;         // reached end of window
+      if(ts>toMs)  continue;
+      const from = a.from.toLowerCase();
+      const to   = a.to.toLowerCase();
+      const val  = BigInt(a.value);
+
+      if(from!==token){              // outgoing from holder
+        const s = m.get(from) || (m.set(from,{inC:0,outC:0,inA:0n,outA:0n}), m.get(from));
+        s.outC++; s.outA += val;
+      }
+      if(to!==token){                // incoming to holder
+        const s = m.get(to) || (m.set(to,{inC:0,outC:0,inA:0n,outA:0n}), m.get(to));
+        s.inC++; s.inA += val;
+      }
+    }
+    url = j.next_offset ? `${proxy}/evm/activity/${token}?chain_ids=${chainId}&limit=1000&offset=${encodeURIComponent(j.next_offset)}` : null;
+  }
+  return m;
 }
 
 async function lookupDecimals(token, chainId){
-  const res = await fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`);
-  if(!res.ok){ console.warn("token-info failed"); return 18; }
-  const j = await res.json();
+  const r=await fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`);
+  if(!r.ok) return 18; const j=await r.json();
   return j.tokens?.[0]?.decimals ?? 18;
 }
 
-function format(big, dec){
-  const s = big.toString().padStart(dec+1,"0");
-  const int = s.slice(0,-dec);
-  const frac= s.slice(-dec, -dec+2).replace(/0+$/,"");
-  return int.replace(/\B(?=(\d{3})+(?!\d))/g,",") + (frac? "."+frac :"");
+function fmt(bi,dec){
+  const s=bi.toString().padStart(dec+1,"0");
+  const int=s.slice(0,-dec).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  const frac=s.slice(-dec,-dec+2).replace(/0+$/,"");
+  return int+(frac? "."+frac:"");
 }
