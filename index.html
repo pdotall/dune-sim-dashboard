@@ -11,7 +11,10 @@
 
   <form id="queryForm">
     <label>Contract&nbsp;Address
-      <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
+      <input id="contract"
+             placeholder="0x…"
+             required
+             pattern="0x[a-fA-F0-9]{40}" />
     </label>
 
     <label>Chain
@@ -40,7 +43,6 @@
   </table>
 
   <pre id="output">← results / errors appear here</pre>
-
   <script src="app.js"></script>
 </body>
 </html>
