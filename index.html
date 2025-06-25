@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dune Sim Quick Query</title>
+  <title>Dune Sim Balance Lookup</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Dune Sim Quick Query</h1>
+  <h1>Dune Sim Balance Lookup</h1>
 
   <form id="queryForm">
     <label>Contract&nbsp;Address
@@ -24,44 +24,15 @@
       </select>
     </label>
 
-    <fieldset>
-      <legend>Date Range</legend>
-      <label><input type="radio" name="range" value="7"  checked /> Last 7 d</label>
-      <label><input type="radio" name="range" value="14"         /> Last 14 d</label>
-      <label><input type="radio" name="range" value="30"         /> Last 30 d</label>
-      <label><input type="radio" name="range" value="0"          /> Custom →
-             <input type="date" id="from" /> to <input type="date" id="to" /></label>
-    </fieldset>
-
-    <button type="submit">Run Query</button>
+    <button type="submit">Run&nbsp;Query</button>
   </form>
 
-  <!-- page-size selector -->
-  <div id="pageSizeBar" hidden>
-    Rows per page:
-    <select id="pageSize">
-      <option value="25" selected>25</option>
-      <option value="50">50</option>
-      <option value="100">100</option>
-    </select>
-  </div>
-
-  <!-- transactions table -->
-  <table id="txTable" hidden>
+  <table id="balTable" hidden>
     <thead>
-      <tr>
-        <th>Time (UTC)</th><th>From → To</th><th>Value (wei)</th><th>Tx Hash</th>
-      </tr>
+      <tr><th>Owner</th><th>Balance</th></tr>
     </thead>
     <tbody></tbody>
   </table>
-
-  <!-- pagination nav -->
-  <div id="pager" hidden>
-    <button id="prevBtn">« Prev</button>
-    <span id="pageInfo"></span>
-    <button id="nextBtn">Next »</button>
-  </div>
 
   <pre id="output">← results / errors appear here</pre>
 

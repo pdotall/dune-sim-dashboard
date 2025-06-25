@@ -1,144 +1,66 @@
-/* ========= app.js  (fast aggregate + guarded) ========= */
+/* ========= app.js (balance-only) ========= */
 
 const proxy  = "https://smart-money.pdotcapital.workers.dev/v1";
 const CHAINS = { ethereum:1, polygon:137, base:8453, optimism:10, arbitrum:42161 };
 
-const out   = document.getElementById("output");
-const tbody = document.querySelector("#txTable tbody");
-const tbl   = document.getElementById("txTable");
+const form = document.getElementById("queryForm");
+const tbl  = document.getElementById("balTable");
+const tbody= tbl.querySelector("tbody");
+const out  = document.getElementById("output");
 
-document.getElementById("queryForm").addEventListener("submit", run);
-
-async function run(e){
+form.addEventListener("submit", async e=>{
   e.preventDefault();
   tbl.hidden = true; tbody.innerHTML = "";
   out.textContent = "⏳ fetching holders…";
 
-  try {
+  try{
     /* inputs */
-    const token   = contract().toLowerCase();
+    const token = document.getElementById("contract").value.trim().toLowerCase();
+    if(!/^0x[a-f0-9]{40}$/.test(token)) throw new Error("Invalid contract.");
     const chainId = CHAINS[document.getElementById("chain").value];
-    const {fromMs, toMs} = windowMs();
 
-    /* 1. current balances */
-    const holders = await fetchHolders(token, chainId);
+    /* decimals (for pretty formatting) */
+    const dec = await getDecimals(token, chainId);
 
-    /* 2. aggregate all transfers once */
-    out.textContent = "⏳ scanning transfers…";
-    const stats = await aggregateTransfers(token, chainId, fromMs, toMs);
+    /* holders stream */
+    let url = `${proxy}/evm/token-holders/${chainId}/${token}?limit=100`;
+    const holders = [];
+    while(url){
+      const r = await fetch(url); if(!r.ok) throw new Error(await r.text());
+      const j = await r.json();
+      holders.push(...j.holders);
+      url = j.next_offset
+        ? `${proxy}/evm/token-holders/${chainId}/${token}?limit=100&offset=${encodeURIComponent(j.next_offset)}`
+        : null;
+    }
 
-    /* 3. merge + render */
-    const dec  = await lookupDecimals(token, chainId);
-    const rows = holders.map(h=>{
-      const s = stats.get(h.wallet_address.toLowerCase()) || {};
-      return {
-        owner:   h.wallet_address,
-        balance: BigInt(h.balance),
-        inC:  s.inC  || 0,
-        inA:  s.inA  || 0n,
-        outC: s.outC || 0,
-        outA: s.outA || 0n
-      };
-    }).sort((a,b)=> Number(b.balance - a.balance));
-
-    rows.forEach(r=>{
-      const tr = tbody.insertRow();
-      tr.insertCell().textContent = r.owner.slice(0,10)+"…";
-      tr.insertCell().textContent = fmt(r.balance, dec);
-      tr.insertCell().textContent = r.inC;
-      tr.insertCell().textContent = fmt(r.inA, dec);
-      tr.insertCell().textContent = r.outC;
-      tr.insertCell().textContent = fmt(r.outA, dec);
+    /* render */
+    holders.sort((a,b)=> BigInt(b.balance) - BigInt(a.balance));
+    holders.forEach(h=>{
+      const row = tbody.insertRow();
+      row.insertCell().textContent = h.wallet_address.slice(0,10)+"…";
+      row.insertCell().textContent = fmt(BigInt(h.balance), dec);
     });
     tbl.hidden = false;
-    out.textContent = `✅ ${rows.length} holders processed`;
-  } catch(err){
+    out.textContent = `✅ ${holders.length} holders`;
+  }catch(err){
     console.error(err);
     out.textContent = `❌ ${err.message}`;
   }
-}
+});
 
 /* ---------- helpers ---------- */
 
-function contract(){
-  return document.getElementById("contract").value.trim();
-}
-
-function windowMs(){
-  const range = new FormData(document.getElementById("queryForm")).get("range");
-  const now   = Date.now();
-  if (range === "0") {
-    const f = new Date(document.getElementById("from").value).getTime();
-    const t = new Date(document.getElementById("to").value).getTime();
-    if (!f || !t) throw new Error("Pick both custom dates.");
-    return { fromMs: f, toMs: t };
-  }
-  return { fromMs: now - (+range) * 864e5, toMs: now };
-}
-
-async function fetchHolders(token, chainId){
-  let url = `${proxy}/evm/token-holders/${chainId}/${token}?limit=100`;
-  const all = [];
-  while (url) {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(await r.text());
-    const j = await r.json();
-    all.push(...j.holders);
-    url = j.next_offset
-      ? `${proxy}/evm/token-holders/${chainId}/${token}?limit=100&offset=${encodeURIComponent(j.next_offset)}`
-      : null;
-  }
-  return all;
-}
-
-async function aggregateTransfers(token, chainId, fromMs, toMs){
-  const m = new Map();
-  let url  = `${proxy}/evm/activity/${token}?chain_ids=${chainId}&limit=1000`;
-
-  while (url) {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(await r.text());
-    const j = await r.json();
-
-    for (const a of j.activity) {
-      if (a.asset_type !== "erc20" || a.token_address.toLowerCase() !== token) continue;
-
-      const ts = new Date(a.block_time).getTime();
-      if (ts < fromMs) return m;    // we've passed the window; done
-      if (ts > toMs) continue;      // not in window yet
-
-      // Some activity objects may miss from/to — guard them
-      const from = (a.from ?? a.from_address ?? "").toLowerCase();
-      const to   = (a.to   ?? a.to_address   ?? "").toLowerCase();
-      const val  = BigInt(a.value);
-
-      if (from && from !== token) {           // outgoing from holder
-        const s = m.get(from) || (m.set(from, {inC:0,outC:0,inA:0n,outA:0n}), m.get(from));
-        s.outC++; s.outA += val;
-      }
-      if (to && to !== token) {               // incoming to holder
-        const s = m.get(to) || (m.set(to, {inC:0,outC:0,inA:0n,outA:0n}), m.get(to));
-        s.inC++;  s.inA  += val;
-      }
-    }
-
-    url = j.next_offset
-      ? `${proxy}/evm/activity/${token}?chain_ids=${chainId}&limit=1000&offset=${encodeURIComponent(j.next_offset)}`
-      : null;
-  }
-  return m;
-}
-
-async function lookupDecimals(token, chainId){
+async function getDecimals(token, chainId){
   const r = await fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`);
-  if (!r.ok) return 18;
+  if(!r.ok) return 18;
   const j = await r.json();
   return j.tokens?.[0]?.decimals ?? 18;
 }
 
-function fmt(bigInt, dec){
-  const s    = bigInt.toString().padStart(dec + 1, "0");
-  const int  = s.slice(0, -dec).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const frac = s.slice(-dec, -dec + 2).replace(/0+$/, "");
-  return int + (frac ? "." + frac : "");
+function fmt(big, dec){
+  const s = big.toString().padStart(dec+1,"0");
+  const int = s.slice(0,-dec).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  const frac= s.slice(-dec, -dec+2).replace(/0+$/,"");
+  return int + (frac? "."+frac :"");
 }
