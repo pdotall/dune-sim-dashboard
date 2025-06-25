@@ -1,4 +1,4 @@
-/* ========= app.js  (per-holder activity scan, capped) ========= */
+/* ========= app.js  (accurate all-time counts, no hard-coding) ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -10,12 +10,12 @@ const CHAINS = {
   arbitrum : { id: 42161, scan: "https://arbiscan.io/address/" }
 };
 
-/* Tweak these for speed vs. coverage */
-const TOP_N       = 200;   // scan only biggest N holders
-const CONCURRENCY = 5;     // simultaneous API calls (free tier = 5 RPS max)
-const DAYS_WINDOW = 30;    // ignore events older than this
+/* --- knobs --- */
+const TOP_HOLDERS            = 150;  // how many holders to scan
+const WORKERS                = 4;    // concurrent requests (≤ 5 for free tier)
+const MAX_PAGES_PER_HOLDER   = 5;    // 5 × 1000 = 5k events max
 
-/* DOM refs */
+/* --- DOM --- */
 const form  = document.getElementById("queryForm");
 const tbl   = document.getElementById("balTable");
 const tbody = tbl.querySelector("tbody");
@@ -29,76 +29,87 @@ form.addEventListener("submit", async (e) => {
   out.textContent = "⏳ fetching holders…";
 
   try {
-    /* --- inputs --- */
+    /* inputs */
     const token = document.getElementById("contract").value.trim().toLowerCase();
-    if (!/^0x[a-f0-9]{40}$/.test(token)) throw new Error("Invalid contract.");
-    const chainKey         = document.getElementById("chain").value;
+    if (!/^0x[a-f0-9]{40}$/.test(token)) throw new Error("Invalid 0x contract.");
+    const chainKey = document.getElementById("chain").value;
     const { id: chainId, scan: scanBase } = CHAINS[chainKey];
 
-    /* --- holders + decimals in parallel --- */
-    const holdersURL = `${proxy}/evm/token-holders/${chainId}/${token}?limit=${TOP_N}`;
+    /* holders & decimals */
+    const holdersURL = `${proxy}/evm/token-holders/${chainId}/${token}?limit=${TOP_HOLDERS}`;
     const holdersP   = fetch(holdersURL).then(r => r.ok ? r.json()
                                                         : r.text().then(Promise.reject));
-    const decP       = fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`)
+    const decimalsP  = fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`)
                        .then(r => r.ok ? r.json() : null).catch(() => null);
 
-    const [holdersJson, tokenInfo] = await Promise.all([holdersP, decP]);
+    const [holdersJson, tokenInfo] = await Promise.all([holdersP, decimalsP]);
     const decimals = tokenInfo?.tokens?.[0]?.decimals ??
                      holdersJson.holders?.[0]?.decimals ?? 18;
 
-    /* --- stats map --- */
+    /* stats map initialised */
     const stats = new Map();          // addr → {balance,inC,outC,swapIn,swapOut}
     holdersJson.holders.forEach(h => {
       stats.set(h.wallet_address.toLowerCase(), {
         balance : BigInt(h.balance),
-        inC     : 0, outC   : 0,
-        swapIn  : 0, swapOut: 0
+        inC : 0,  outC : 0,
+        swapIn : 0, swapOut : 0
       });
     });
 
-    /* queue & worker pool */
-    const queue = [...stats.keys()];        // array of lowercase addresses
-    const msWindow = DAYS_WINDOW * 864e5;
-    const now      = Date.now();
-
-    async function worker() {
+    /* worker queue */
+    const queue = [...stats.keys()];
+    async function worker () {
       while (queue.length) {
         const addr = queue.pop();
         const s    = stats.get(addr);
 
-        const url = `${proxy}/evm/activity/${addr}`
-                  + `?chain_ids=${chainId}&limit=250&type=send,receive,swap`;
-        const r   = await fetch(url);
-        if (!r.ok) { console.error(await r.text()); continue; }
-        const { activity } = await r.json();
+        let pages = 0;
+        let url   = `${proxy}/evm/activity/${addr}`
+                  + `?chain_ids=${chainId}&type=send,receive,mint,burn,swap&limit=1000`;
 
-        for (const ev of activity) {
-          if (now - new Date(ev.block_time).getTime() > msWindow) break;
+        while (url && pages < MAX_PAGES_PER_HOLDER) {
+          const r = await fetch(url); if (!r.ok) { console.error(await r.text()); break; }
+          const { activity, next_offset } = await r.json();
+          pages++;
 
-          /* --- send / receive of THIS token --- */
-          if (ev.asset_type === "erc20" && ev.token_address.toLowerCase() === token) {
-            if (ev.type === "send")    s.outC++;
-            if (ev.type === "receive") s.inC++;
+          for (const ev of activity) {
+            /* ---- token-specific transfers ---- */
+            if (ev.asset_type === "erc20" && ev.token_address.toLowerCase() === token) {
+              if (ev.type === "send")     s.outC++;
+              if (ev.type === "receive")  s.inC++;
+              if (ev.type === "mint")     s.inC++;     // 0x0 → wallet
+              if (ev.type === "burn")     s.outC++;    // wallet → 0x0
+            }
+
+            /* ---- swap events ---- */
+            if (ev.type === "swap") {
+              (ev.tokens_out || []).forEach(t => {
+                if (t.token_address?.toLowerCase() === token) s.swapIn++;
+              });
+              (ev.tokens_in  || []).forEach(t => {
+                if (t.token_address?.toLowerCase() === token) s.swapOut++;
+              });
+            }
           }
 
-          /* --- swap: token appears in tokens_in / tokens_out --- */
-          if (ev.type === "swap") {
-            (ev.tokens_out || []).forEach(t => {
-              if (t.token_address?.toLowerCase() === token) s.swapIn++;
-            });
-            (ev.tokens_in  || []).forEach(t => {
-              if (t.token_address?.toLowerCase() === token) s.swapOut++;
-            });
-          }
+          /* stop early if we've already seen both an in-flow and out-flow */
+          if (s.inC > 0 && (s.outC > 0 || s.swapOut > 0)) break;
+          if (!next_offset) break;
+          url = `${proxy}/evm/activity/${addr}`
+              + `?chain_ids=${chainId}&type=send,receive,mint,burn,swap&limit=1000`
+              + `&offset=${encodeURIComponent(next_offset)}`;
         }
-        out.textContent = `⏳ scanned ${TOP_N - queue.length}/${TOP_N} holders`;
+
+        out.textContent = `⏳ processed ${TOP_HOLDERS - queue.length}/${TOP_HOLDERS}`;
       }
     }
-    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
-    /* --- render table sorted by balance --- */
+    await Promise.all(Array.from({ length: WORKERS }, worker));
+
+    /* render */
     const rows = Array.from(stats.entries())
-      .sort(([,a],[,b]) => a.balance===b.balance ? 0 : a.balance>b.balance ? -1 : 1);
+      .sort(([,a],[,b]) => a.balance === b.balance ? 0
+                                                   : a.balance > b.balance ? -1 : 1);
 
     rows.forEach(([addr, s]) => {
       const tr = tbody.insertRow();
@@ -116,7 +127,7 @@ form.addEventListener("submit", async (e) => {
     });
 
     tbl.hidden = false;
-    out.textContent = `✅ completed (${rows.length} holders, ${DAYS_WINDOW} d window)`;
+    out.textContent = `✅ ${rows.length} holders scanned`;
   } catch (err) {
     console.error(err);
     out.textContent = `❌ ${err}`;
