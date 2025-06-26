@@ -10,7 +10,7 @@ const CHAINS = {
 };
 
 /* knobs */
-const TOP_HOLDERS          = 100;
+const TOP_HOLDERS          = 1000;
 const WORKERS              = 5;
 const MAX_PAGES_PER_HOLDER = 3;
 
