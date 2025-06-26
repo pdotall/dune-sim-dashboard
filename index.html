@@ -6,7 +6,7 @@
   <title>Dune Sim Token Holders</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    #tokenPreview { display:flex; align-items:center; gap:.5rem; margin:.3rem 0 1rem }
+    #tokenPreview { display:flex; align-items:center; gap:.5rem; margin:.4rem 0 1rem }
     #tokenPreview img { width:20px; height:20px; border-radius:50% }
     #tokenPreview.hidden { display:none }
   </style>
@@ -16,13 +16,12 @@
 
   <form id="queryForm">
     <label>Contract&nbsp;Address
-      <input id="contract" placeholder="0x…" required
-             pattern="0x[a-fA-F0-9]{40}" />
+      <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
     </label>
 
-    <!-- live preview -->
+    <!-- live token badge -->
     <div id="tokenPreview" class="hidden">
-      <img id="tokenLogo" alt="">
+      <img id="tokenLogo" alt="" onerror="this.style.display='none'">
       <span id="tokenName"></span>
     </div>
 
@@ -39,9 +38,9 @@
     <fieldset>
       <legend>Time window</legend>
       <label><input type="radio" name="range" value="all" checked /> All-time</label>
-      <label><input type="radio" name="range" value="7"  /> Last&nbsp;7 d</label>
-      <label><input type="radio" name="range" value="14" /> Last&nbsp;14 d</label>
-      <label><input type="radio" name="range" value="30" /> Last&nbsp;30 d</label>
+      <label><input type="radio" name="range" value="7"  /> Last 7 d</label>
+      <label><input type="radio" name="range" value="14" /> Last 14 d</label>
+      <label><input type="radio" name="range" value="30" /> Last 30 d</label>
     </fieldset>
 
     <button type="submit">Run Query</button>
