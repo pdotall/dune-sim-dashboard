@@ -1,5 +1,5 @@
 /* =========  app.js  (logo fallback, token column, fast scan, ENS column)  =========
-   Added: CSV-driven ENS lookup (data/ens_map.csv) → new “ENS” column
+   Adds CSV-driven ENS lookup (data/ens_map.csv) and displays it in a new column
 ------------------------------------------------------------------------------- */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
@@ -25,40 +25,36 @@ function fmt(bigInt, dec) {
   const frac = s.slice(-dec, -dec + 2).replace(/0+$/, "");
   return int + (frac ? "." + frac : "");
 }
-function bestLogo(tokenAddr, simUrl, chainKey) {
+function bestLogo(addr, simUrl, chainKey) {
   if (simUrl && simUrl.startsWith("https://")) return simUrl;
   if (chainKey === "ethereum")
-    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${tokenAddr}/logo.png`;
+    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${addr}/logo.png`;
   return "";
 }
 
 /* ---------- ENS map (loaded once) ---------- */
-let ensMapPromise = loadEnsCSV();     // resolves to Map(addr → ens)
-
-function loadEnsCSV() {
-  return new Promise((resolve, reject) => {
-    const map = new Map();
-    Papa.parse("data/ens_map.csv", {
-      download: true,
-      header  : true,
-      skipEmptyLines: true,
-      complete: ({ data }) => {
-        data.forEach(r => {
-          // some rows in the sample have names wrapped in brackets []
-          const name = (r.ens_names || "")
-                         .replace(/^\s*\[|\]\s*$/g, "")   // strip [   ]
-                         .trim();
-          if (r.owner) map.set(r.owner.toLowerCase(), name);
-        });
-        resolve(map);
-      },
-      error: err => {
-        console.error("ENS CSV load failed:", err);
-        resolve(map);               // still resolve (empty) so app works
-      }
-    });
+const ensMapPromise = new Promise((resolve) => {
+  const map = new Map();
+  Papa.parse("data/ens_map.csv", {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: ({ data }) => {
+      data.forEach(r => {
+        if (!r.owner) return;
+        const name = (r.ens_names || "")
+                       .replace(/^\s*\[|\]\s*$/g, "")   // strip surrounding []
+                       .trim();
+        map.set(r.owner.toLowerCase(), name);
+      });
+      resolve(map);
+    },
+    error: err => {
+      console.error("ENS CSV load failed:", err);
+      resolve(map);           // resolve empty map so UI still works
+    }
   });
-}
+});
 
 /* ---------- DOM refs ---------- */
 const form       = document.getElementById("queryForm");
@@ -70,7 +66,7 @@ const preview    = document.getElementById("tokenPreview");
 const tokenLogo  = document.getElementById("tokenLogo");
 const tokenName  = document.getElementById("tokenName");
 
-/* ---------- live preview badge ---------- */
+/* ---------- live preview (token badge) ---------- */
 addrInput.addEventListener("blur", async () => {
   const addr = addrInput.value.trim().toLowerCase();
   if (!/^0x[a-f0-9]{40}$/.test(addr)) return preview.classList.add("hidden");
@@ -79,14 +75,14 @@ addrInput.addEventListener("blur", async () => {
   const chainId  = CHAINS[chainKey].id;
 
   try {
-    const r     = await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${chainId}`);
-    const info  = (await r.json()).tokens?.[0];
+    const r    = await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${chainId}`);
+    const info = (await r.json()).tokens?.[0];
     if (!info) throw new Error();
 
-    const logo = bestLogo(addr, info.logo_url ?? "", chainKey);
-    tokenLogo.src   = logo;
+    const logoUrl = bestLogo(addr, info.logo_url ?? "", chainKey);
+    tokenLogo.src   = logoUrl;
     tokenLogo.alt   = info.symbol;
-    tokenLogo.style.display = logo ? "" : "none";
+    tokenLogo.style.display = logoUrl ? "" : "none";
     tokenName.textContent   = `${info.name} (${info.symbol})`;
     preview.classList.remove("hidden");
   } catch {
@@ -132,7 +128,7 @@ form.addEventListener("submit", async (e) => {
     const symbol   = tokenInfo?.tokens?.[0]?.symbol ?? "";
     const logoURL  = bestLogo(token, tokenInfo?.tokens?.[0]?.logo_url ?? "", chainKey);
 
-    /* stats map */
+    /* build stats map */
     const stats = new Map();
     holdersJson.holders.forEach(h => {
       stats.set(h.wallet_address.toLowerCase(), {
@@ -145,13 +141,13 @@ form.addEventListener("submit", async (e) => {
     /* worker queue */
     const queue = [...stats.keys()];
 
-    async function worker () {
+    async function worker() {
       while (queue.length) {
         const addr = queue.pop();
         const s    = stats.get(addr);
 
         let pages = 0;
-        let limit = 250;   // first page small
+        let limit = 250;
         let url   = `${proxy}/evm/activity/${addr}`
                   + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=${limit}`;
 
@@ -164,7 +160,7 @@ form.addEventListener("submit", async (e) => {
 
           for (const ev of activity) {
             const ts = new Date(ev.block_time).getTime();
-            if (ts < fromMs) { url = null; break; }          // outside window
+            if (ts < fromMs) { url = null; break; }
 
             if (ev.asset_type === "erc20" &&
                 ev.token_address.toLowerCase() === token) {
@@ -176,7 +172,7 @@ form.addEventListener("submit", async (e) => {
           }
 
           if (!next_offset) break;
-          limit = 1000;   // larger pages afterwards
+          limit = 1000;
           url   = `${proxy}/evm/activity/${addr}`
                 + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=${limit}`
                 + `&offset=${encodeURIComponent(next_offset)}`;
@@ -197,20 +193,20 @@ form.addEventListener("submit", async (e) => {
 
       /* Owner link */
       const a = document.createElement("a");
-      a.href  = scanBase + addr;
-      a.target = "_blank";
-      a.rel    = "noopener";
+      a.href = scanBase + addr;
       a.textContent = addr;
+      a.target = "_blank";
+      a.rel = "noopener";
       tr.insertCell().appendChild(a);
 
-      /* ENS cell */
+      /* ENS */
       tr.insertCell().textContent = ensMap.get(addr) || "";
 
-      tr.insertCell().textContent = fmt(s.balance, decimals); // balance
-      tr.insertCell().textContent = s.inC;                    // Tx In
-      tr.insertCell().textContent = fmt(s.inAmt, decimals);   // Amt In
-      tr.insertCell().textContent = s.outC;                   // Tx Out
-      tr.insertCell().textContent = fmt(s.outAmt, decimals);  // Amt Out
+      tr.insertCell().textContent = fmt(s.balance, decimals);
+      tr.insertCell().textContent = s.inC;
+      tr.insertCell().textContent = fmt(s.inAmt, decimals);
+      tr.insertCell().textContent = s.outC;
+      tr.insertCell().textContent = fmt(s.outAmt, decimals);
 
       /* token column */
       const tokenCell = tr.insertCell();
