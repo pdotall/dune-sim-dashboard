@@ -1,4 +1,4 @@
-/* ========= app.js  (adds Amount In / Amount Out) ========= */
+/* ========= app.js  (optimised window + amounts) ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 const CHAINS = {
@@ -9,10 +9,10 @@ const CHAINS = {
   arbitrum : { id: 42161, scan: "https://arbiscan.io/address/" }
 };
 
-/* knobs */
-const TOP_HOLDERS          = 100;
-const WORKERS              = 5;
-const MAX_PAGES_PER_HOLDER = 3;
+/* speed knobs */
+const TOP_CAP   = { all: 100, 30: 100, 14: 75, 7: 50 };  // holders by window
+const WORKERS   = 5;   // free tier = 5 RPS
+const MAX_PAGES = 3;   // per holder (first 250 + up to 2×1000)
 
 /* DOM */
 const form  = document.getElementById("queryForm");
@@ -34,83 +34,83 @@ form.addEventListener("submit", async (e) => {
     const { id: chainId, scan: scanBase } = CHAINS[chainKey];
 
     /* window */
-    const sel  = new FormData(form).get("range");            // all | 7 | 14 | 30
-    const now  = Date.now();
+    const sel   = new FormData(form).get("range");    // all | 7 | 14 | 30
+    const now   = Date.now();
     const fromMs = sel === "all" ? 0 : now - (+sel) * 864e5;
+    const TOP_HOLDERS = TOP_CAP[sel];
 
     /* holders + decimals */
     const holdersURL = `${proxy}/evm/token-holders/${chainId}/${token}?limit=${TOP_HOLDERS}`;
-    const holdersP   = fetch(holdersURL).then(r => r.ok ? r.json()
-                                                        : r.text().then(Promise.reject));
+    const holdersP   = fetch(holdersURL).then(r=>r.ok?r.json():r.text().then(Promise.reject));
     const decP       = fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`)
-                       .then(r => r.ok ? r.json() : null).catch(()=>null);
+                       .then(r=>r.ok?r.json():null).catch(()=>null);
 
     const [holdersJson, tokenInfo] = await Promise.all([holdersP, decP]);
     const decimals = tokenInfo?.tokens?.[0]?.decimals ??
                      holdersJson.holders?.[0]?.decimals ?? 18;
 
     /* stats map */
-    const stats = new Map();  // addr → {balance,inC,outC,inAmt,outAmt}
+    const stats = new Map();
     holdersJson.holders.forEach(h=>{
-      stats.set(h.wallet_address.toLowerCase(), {
-        balance : BigInt(h.balance),
-        inC : 0,  outC : 0,
-        inAmt : 0n, outAmt : 0n
+      stats.set(h.wallet_address.toLowerCase(),{
+        balance:BigInt(h.balance),
+        inC:0,outC:0,inAmt:0n,outAmt:0n
       });
     });
 
-    /* queue workers */
+    /* queue + workers */
     const queue = [...stats.keys()];
-    async function worker(){
-      while(queue.length){
+    async function worker() {
+      while (queue.length) {
         const addr = queue.pop();
         const s    = stats.get(addr);
 
         let pages = 0;
+        let limit = 250;          // first, small page
         let url   = `${proxy}/evm/activity/${addr}`
-                  + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=1000`;
+                  + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=${limit}`;
 
-        while(url && pages < MAX_PAGES_PER_HOLDER){
-          const r = await fetch(url); if(!r.ok){console.error(await r.text());break;}
+        while (url && pages < MAX_PAGES) {
+          const r = await fetch(url);
+          if (!r.ok) { console.error(await r.text()); break; }
           const { activity, next_offset } = await r.json();
           pages++;
 
-          for(const ev of activity){
+          for (const ev of activity) {
             const ts = new Date(ev.block_time).getTime();
-            if(ts < fromMs) { url = null; break; }
+            if (ts < fromMs) { url = null; break; }
 
-            if(ev.asset_type==="erc20" && ev.token_address.toLowerCase()===token){
+            if (ev.asset_type === "erc20" &&
+                ev.token_address.toLowerCase() === token) {
               const val = BigInt(ev.value);
-              if(ev.type==="send" || ev.type==="burn"){
-                s.outC++; s.outAmt += val;
-              }
-              if(ev.type==="receive" || ev.type==="mint"){
-                s.inC++;  s.inAmt  += val;
-              }
+              if (["send","burn"].includes(ev.type))  { s.outC++; s.outAmt += val; }
+              if (["receive","mint"].includes(ev.type)){ s.inC++;  s.inAmt  += val; }
             }
           }
-          if(!next_offset) break;
+
+          if (!next_offset) break;
+          limit = 1000;  // upgrade to bigger page after first
           url = `${proxy}/evm/activity/${addr}`
-              + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=1000`
+              + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=${limit}`
               + `&offset=${encodeURIComponent(next_offset)}`;
         }
         out.textContent = `⏳ processed ${TOP_HOLDERS - queue.length}/${TOP_HOLDERS}`;
       }
     }
-    await Promise.all(Array.from({length:WORKERS}, worker));
+    await Promise.all(Array.from({ length: WORKERS }, worker));
 
-    /* render (skip only if both counts are zero) */
-const rows = Array.from(stats.entries())
-  .filter(([, s]) => !(s.inC === 0 && s.outC === 0))   // ← updated
-  .sort(([,a],[,b]) => a.balance === b.balance ? 0
-                                               : a.balance > b.balance ? -1 : 1);
-
+    /* render rows with at least one side of activity */
+    const rows = Array.from(stats.entries())
+      .filter(([,s]) => !(s.inC === 0 && s.outC === 0))
+      .sort(([,a],[,b]) => a.balance === b.balance ? 0
+                                                   : a.balance > b.balance ? -1 : 1);
 
     rows.forEach(([addr,s])=>{
       const tr = tbody.insertRow();
       const link = document.createElement("a");
       link.href = scanBase + addr;
-      link.target = "_blank"; link.rel="noopener"; link.textContent = addr;
+      link.target = "_blank"; link.rel = "noopener";
+      link.textContent = addr;
 
       tr.insertCell().appendChild(link);
       tr.insertCell().textContent = fmt(s.balance, decimals);
@@ -122,16 +122,16 @@ const rows = Array.from(stats.entries())
 
     tbl.hidden = false;
     out.textContent = `✅ ${rows.length} holders scanned`;
-  }catch(err){
+  } catch (err) {
     console.error(err);
     out.textContent = `❌ ${err}`;
   }
 });
 
 /* helpers */
-function fmt(bigInt, dec){
-  const s = bigInt.toString().padStart(dec+1,"0");
-  const int  = s.slice(0,-dec).replace(/\B(?=(\d{3})+(?!\d))/g,",");
-  const frac = s.slice(-dec, -dec+2).replace(/0+$/,"");
+function fmt(bi, dec) {
+  const s = bi.toString().padStart(dec + 1, "0");
+  const int  = s.slice(0, -dec).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const frac = s.slice(-dec, -dec + 2).replace(/0+$/, "");
   return int + (frac ? "." + frac : "");
 }
