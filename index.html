@@ -5,14 +5,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dune Sim Token Holders</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    #tokenPreview { display:flex; align-items:center; gap:.5rem; margin:.3rem 0 1rem }
+    #tokenPreview img { width:20px; height:20px; border-radius:50% }
+    #tokenPreview.hidden { display:none }
+  </style>
 </head>
 <body>
   <h1>Dune Sim Token Holders</h1>
 
   <form id="queryForm">
     <label>Contract&nbsp;Address
-      <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
+      <input id="contract" placeholder="0x…" required
+             pattern="0x[a-fA-F0-9]{40}" />
     </label>
+
+    <!-- live preview -->
+    <div id="tokenPreview" class="hidden">
+      <img id="tokenLogo" alt="">
+      <span id="tokenName"></span>
+    </div>
 
     <label>Chain
       <select id="chain">
@@ -32,15 +44,16 @@
       <label><input type="radio" name="range" value="30" /> Last&nbsp;30 d</label>
     </fieldset>
 
-    <button type="submit">Run&nbsp;Query</button>
+    <button type="submit">Run Query</button>
   </form>
 
   <table id="balTable" hidden>
     <thead>
       <tr>
         <th>Owner</th><th>Balance</th>
-        <th>Tx&nbsp;In</th><th>Amount&nbsp;In</th>
-        <th>Tx&nbsp;Out</th><th>Amount&nbsp;Out</th>
+        <th>Tx In</th><th>Amount In</th>
+        <th>Tx Out</th><th>Amount Out</th>
+        <th>Token</th>
       </tr>
     </thead>
     <tbody></tbody>
