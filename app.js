@@ -10,9 +10,9 @@ const CHAINS = {
 };
 
 /* speed knobs */
-const TOP_CAP   = { all: 1000, 30: 1000, 14: 500, 7: 250 };  // holders by window
+const TOP_CAP   = { all: 1000, 30: 1000, 14: 750, 7: 500 };  // holders by window
 const WORKERS   = 5;   // free tier = 5 RPS
-const MAX_PAGES = 3;   // per holder (first 250 + up to 2×1000)
+const MAX_PAGES = 5;   // per holder (first 250 + up to 2×1000)
 
 /* DOM */
 const form  = document.getElementById("queryForm");
