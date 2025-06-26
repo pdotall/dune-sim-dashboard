@@ -99,10 +99,12 @@ form.addEventListener("submit", async (e) => {
     }
     await Promise.all(Array.from({length:WORKERS}, worker));
 
-    /* render (skip zero/zero) */
-    const rows = Array.from(stats.entries())
-      .filter(([,s]) => s.inC || s.outC)
-      .sort(([,a],[,b]) => a.balance===b.balance ? 0 : a.balance > b.balance ? -1 : 1);
+    /* render (skip only if both counts are zero) */
+const rows = Array.from(stats.entries())
+  .filter(([, s]) => !(s.inC === 0 && s.outC === 0))   // ← updated
+  .sort(([,a],[,b]) => a.balance === b.balance ? 0
+                                               : a.balance > b.balance ? -1 : 1);
+
 
     rows.forEach(([addr,s])=>{
       const tr = tbody.insertRow();
