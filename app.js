@@ -32,29 +32,32 @@ function bestLogo(addr, simUrl, chainKey) {
   return "";
 }
 
-/* ---------- ENS map (loaded once) ---------- */
-const ensMapPromise = new Promise((resolve) => {
-  const map = new Map();
-  Papa.parse("data/ens_map.csv", {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: ({ data }) => {
-      data.forEach(r => {
-        if (!r.owner) return;
-        const name = (r.ens_names || "")
-                       .replace(/^\s*\[|\]\s*$/g, "")   // strip surrounding []
-                       .trim();
-        map.set(r.owner.toLowerCase(), name);
-      });
-      resolve(map);
-    },
-    error: err => {
-      console.error("ENS CSV load failed:", err);
-      resolve(map);           // resolve empty map so UI still works
-    }
-  });
-});
+/* ---------- ENS map (loaded once – no external libs) ---------- */
+const ensMapPromise = (async () => {
+  try {
+    const txt = await fetch("data/ens_map.csv").then(r => r.text());
+    const map = new Map();
+
+    // split into lines, skip header
+    txt.split(/\r?\n/).slice(1).forEach(line => {
+      if (!line.trim()) return;                // skip blanks
+      const comma = line.indexOf(",");
+      if (comma === -1) return;               // malformed
+      const owner = line.slice(0, comma).trim().toLowerCase();
+      let   name  = line.slice(comma + 1).trim();
+
+      // strip surrounding brackets [] if present
+      name = name.replace(/^\[|\]$/g, "").trim();
+      map.set(owner, name);
+    });
+
+    return map;
+  } catch (err) {
+    console.error("ENS CSV load failed:", err);
+    return new Map();   // empty map keeps UI functional
+  }
+})();
+
 
 /* ---------- DOM refs ---------- */
 const form       = document.getElementById("queryForm");
