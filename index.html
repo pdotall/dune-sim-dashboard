@@ -6,66 +6,73 @@
   <title>Dune Sim Token Holders</title>
 
   <link rel="stylesheet" href="style.css" />
-
-
   <style>
+    /* keeps the live-preview badge from app.js */
     #tokenPreview { display:flex; align-items:center; gap:.5rem; margin:.4rem 0 1rem }
     #tokenPreview img { width:20px; height:20px; border-radius:50% }
     #tokenPreview.hidden { display:none }
   </style>
 </head>
 <body>
-  <h1>Dune Sim Token Holders</h1>
 
-  <form id="queryForm">
-    <label>Contract&nbsp;Address
-      <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
-    </label>
-
-    <!-- live token badge -->
-    <div id="tokenPreview" class="hidden">
-      <img id="tokenLogo" alt="" onerror="this.style.display='none'">
-      <span id="tokenName"></span>
+  <div class="window">
+    <div class="title-bar">
+      <div class="title-bar-text">Dune Sim Token Holders</div>
+      <div class="title-bar-controls">
+        <button aria-label="Minimize"></button>
+        <button aria-label="Maximize"></button>
+        <button aria-label="Close"></button>
+      </div>
     </div>
 
-    <label>Chain
-      <select id="chain">
-        <option value="ethereum">Ethereum</option>
-        <option value="polygon">Polygon</option>
-        <option value="base">Base</option>
-        <option value="optimism">Optimism</option>
-        <option value="arbitrum">Arbitrum</option>
-      </select>
-    </label>
+    <div class="window-body">
+      <form id="queryForm">
+        <label>Contract Address
+          <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
+        </label>
 
-    <fieldset>
-      <legend>Time window</legend>
-      <label><input type="radio" name="range" value="all" checked /> All-time</label>
-      <label><input type="radio" name="range" value="7"  /> Last 7 d</label>
-      <label><input type="radio" name="range" value="14" /> Last 14 d</label>
-      <label><input type="radio" name="range" value="30" /> Last 30 d</label>
-    </fieldset>
+        <div id="tokenPreview" class="hidden">
+          <img id="tokenLogo" alt="" onerror="this.style.display='none'">
+          <span id="tokenName"></span>
+        </div>
 
-    <button type="submit">Run Query</button>
-  </form>
+        <label>Chain
+          <select id="chain">
+            <option value="ethereum">Ethereum</option>
+            <option value="polygon">Polygon</option>
+            <option value="base">Base</option>
+            <option value="optimism">Optimism</option>
+            <option value="arbitrum">Arbitrum</option>
+          </select>
+        </label>
 
-  <table id="balTable" hidden>
-    <thead>
-      <tr>
-        <th>Owner</th>
-        <th>ENS</th>      <!-- new column -->
-        <th>Balance</th>
-        <th>Tx In</th><th>Amount In</th>
-        <th>Tx Out</th><th>Amount Out</th>
-        <th>Token</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+        <fieldset>
+          <legend>Time window</legend>
+          <label><input type="radio" name="range" value="all" checked> All-time</label>
+          <label><input type="radio" name="range" value="7"> Last 7 d</label>
+          <label><input type="radio" name="range" value="14"> Last 14 d</label>
+          <label><input type="radio" name="range" value="30"> Last 30 d</label>
+        </fieldset>
 
-  <pre id="output">← results / errors appear here</pre>
+        <button type="submit">Run Query</button>
+      </form>
 
-  <!-- main logic -->
+      <table id="balTable" hidden>
+        <thead>
+          <tr>
+            <th>Owner</th><th>ENS</th><th>Balance</th>
+            <th>Tx In</th><th>Amount In</th>
+            <th>Tx Out</th><th>Amount Out</th>
+            <th>Token</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <pre id="output">← results / errors appear here</pre>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
