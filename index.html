@@ -6,8 +6,12 @@
   <title>Dune Sim Token Holders</title>
 
   <link rel="stylesheet" href="style.css" />
+
+  <!-- tiny build of ethers.js (≈90 kB) – used only for address checksum -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
   <style>
-    /* keeps the live-preview badge from app.js */
+    /* live-preview badge under contract field */
     #tokenPreview { display:flex; align-items:center; gap:.5rem; margin:.4rem 0 1rem }
     #tokenPreview img { width:20px; height:20px; border-radius:50% }
     #tokenPreview.hidden { display:none }
@@ -31,8 +35,9 @@
           <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
         </label>
 
+        <!-- live token badge -->
         <div id="tokenPreview" class="hidden">
-          <img id="tokenLogo" alt="" onerror="this.style.display='none'">
+          <img id="tokenLogo" alt="">
           <span id="tokenName"></span>
         </div>
 
@@ -48,10 +53,10 @@
 
         <fieldset>
           <legend>Time window</legend>
-          <label><input type="radio" name="range" value="all" checked> All-time</label>
-          <label><input type="radio" name="range" value="7"> Last 7 d</label>
-          <label><input type="radio" name="range" value="14"> Last 14 d</label>
-          <label><input type="radio" name="range" value="30"> Last 30 d</label>
+          <label><input type="radio" name="range" value="7"  checked> Last&nbsp;7&nbsp;d</label>
+          <label><input type="radio" name="range" value="14"> Last&nbsp;14&nbsp;d</label>
+          <label><input type="radio" name="range" value="30"> Last&nbsp;30&nbsp;d</label>
+          <label><input type="radio" name="range" value="all"> All-time</label>
         </fieldset>
 
         <button type="submit">Run Query</button>
@@ -61,8 +66,8 @@
         <thead>
           <tr>
             <th>Owner</th><th>ENS</th><th>Balance</th>
-            <th>Tx In</th><th>Amount In</th>
-            <th>Tx Out</th><th>Amount Out</th>
+            <th>Tx&nbsp;In</th><th>Amount&nbsp;In</th>
+            <th>Tx&nbsp;Out</th><th>Amount&nbsp;Out</th>
             <th>Token</th>
           </tr>
         </thead>

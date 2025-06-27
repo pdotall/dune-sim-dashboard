@@ -1,4 +1,4 @@
-/* =========  app.js  (Win 95 UI + robust logo with auto-fallback)  ========= */
+/* =========  app.js  (Win-95 UI, ENS column, bullet-proof logo)  ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -24,24 +24,26 @@ function fmt(bigInt, dec) {
   return int + (frac ? "." + frac : "");
 }
 
-/* Build a TrustWallet fallback path (Ethereum only) */
+/* TrustWallet logo path for any chain (needs checksummed addr) */
 function trustLogo(addr, chainKey) {
-  if (chainKey !== "ethereum") return "";
-  return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${addr}/logo.png`;
+  try {
+    const checksummed = ethers.utils.getAddress(addr);
+    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainKey}/assets/${checksummed}/logo.png`;
+  } catch { return ""; }
 }
 
-/* Generate <img …> HTML with JS-injected onerror for auto-fallback */
+/* <img> element HTML with automatic fallback ↓ */
 function logoHTML(primary, fallback, sym) {
-  if (!primary && !fallback) return sym;          // nothing to show
+  if (!primary && !fallback) return sym;            // text only
   const first = primary || fallback;
-  const escF  = fallback.replace(/"/g, '&quot;'); // safe for attr
+  const escF  = fallback.replace(/"/g, '&quot;');
   const onErr = fallback
     ? `onerror="if(this.src!=='${escF}'){this.src='${escF}';}else{this.style.display='none';}"`
     : `onerror="this.style.display='none'"`;
   return `<img src="${first}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${onErr}> ${sym}`;
 }
 
-/* ---------- ENS map (loaded once – no external libs) ---------- */
+/* ---------- ENS map (CSV, parsed once) ---------- */
 const ensMapPromise = (async () => {
   try {
     const txt = await fetch("data/ens_map.csv").then(r => r.text());
@@ -84,11 +86,11 @@ addrInput.addEventListener("blur", async () => {
     const info = (await r.json()).tokens?.[0];
     if (!info) throw new Error();
 
+    const simLogo = info.logo_url || "";
     const fallback = trustLogo(addr, chainKey);
-    const primary  = info.logo_url || fallback;
 
-    tokenLogo.src = primary;
-    tokenLogo.style.display = ""; // reset
+    tokenLogo.src = simLogo || fallback;
+    tokenLogo.style.display = "";
     tokenLogo.onerror = () => {
       if (fallback && tokenLogo.src !== fallback) {
         tokenLogo.onerror = null;
@@ -126,7 +128,7 @@ form.addEventListener("submit", async (e) => {
     const ensMap = await ensMapPromise;
 
     /* time window */
-    const sel    = new FormData(form).get("range");
+    const sel    = new FormData(form).get("range");   // 7 | 14 | 30 | all
     const now    = Date.now();
     const fromMs = sel === "all" ? 0 : now - (+sel) * 864e5;
     const TOP_HOLDERS = TOP_CAP[sel];
@@ -143,7 +145,7 @@ form.addEventListener("submit", async (e) => {
                      holdersJson.holders?.[0]?.decimals ?? 18;
     const symbol   = tokenInfo?.tokens?.[0]?.symbol ?? "";
 
-    const simLogo  = tokenInfo?.tokens?.[0]?.logo_url || "";
+    const simLogo      = tokenInfo?.tokens?.[0]?.logo_url || "";
     const fallbackLogo = trustLogo(token, chainKey);
 
     /* stats map */
@@ -226,7 +228,7 @@ form.addEventListener("submit", async (e) => {
       tr.insertCell().textContent = s.outC;
       tr.insertCell().textContent = fmt(s.outAmt, decimals);
 
-      /* Token logo + symbol */
+      /* Token column (logo + symbol) */
       const tokenCell = tr.insertCell();
       tokenCell.innerHTML = logoHTML(simLogo, fallbackLogo, symbol);
     });
