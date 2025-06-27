@@ -1,6 +1,4 @@
-/* =========  app.js  (logo fallback, token column, fast scan, ENS column)  =========
-   Adds CSV-driven ENS lookup (data/ens_map.csv) and displays it in a new column
-------------------------------------------------------------------------------- */
+/* =========  app.js  (Win 95 UI + robust logo with auto-fallback)  ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -25,11 +23,22 @@ function fmt(bigInt, dec) {
   const frac = s.slice(-dec, -dec + 2).replace(/0+$/, "");
   return int + (frac ? "." + frac : "");
 }
-function bestLogo(addr, simUrl, chainKey) {
-  if (simUrl && simUrl.startsWith("https://")) return simUrl;
-  if (chainKey === "ethereum")
-    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${addr}/logo.png`;
-  return "";
+
+/* Build a TrustWallet fallback path (Ethereum only) */
+function trustLogo(addr, chainKey) {
+  if (chainKey !== "ethereum") return "";
+  return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${addr}/logo.png`;
+}
+
+/* Generate <img …> HTML with JS-injected onerror for auto-fallback */
+function logoHTML(primary, fallback, sym) {
+  if (!primary && !fallback) return sym;          // nothing to show
+  const first = primary || fallback;
+  const escF  = fallback.replace(/"/g, '&quot;'); // safe for attr
+  const onErr = fallback
+    ? `onerror="if(this.src!=='${escF}'){this.src='${escF}';}else{this.style.display='none';}"`
+    : `onerror="this.style.display='none'"`;
+  return `<img src="${first}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${onErr}> ${sym}`;
 }
 
 /* ---------- ENS map (loaded once – no external libs) ---------- */
@@ -37,27 +46,20 @@ const ensMapPromise = (async () => {
   try {
     const txt = await fetch("data/ens_map.csv").then(r => r.text());
     const map = new Map();
-
-    // split into lines, skip header
     txt.split(/\r?\n/).slice(1).forEach(line => {
-      if (!line.trim()) return;                // skip blanks
-      const comma = line.indexOf(",");
-      if (comma === -1) return;               // malformed
-      const owner = line.slice(0, comma).trim().toLowerCase();
-      let   name  = line.slice(comma + 1).trim();
-
-      // strip surrounding brackets [] if present
-      name = name.replace(/^\[|\]$/g, "").trim();
+      if (!line.trim()) return;
+      const [ownerRaw, nameRaw = ""] = line.split(/,(.+)/); // split once
+      if (!ownerRaw) return;
+      const owner = ownerRaw.trim().toLowerCase();
+      const name  = nameRaw.replace(/^\[|\]$/g, "").trim();
       map.set(owner, name);
     });
-
     return map;
   } catch (err) {
     console.error("ENS CSV load failed:", err);
-    return new Map();   // empty map keeps UI functional
+    return new Map();
   }
 })();
-
 
 /* ---------- DOM refs ---------- */
 const form       = document.getElementById("queryForm");
@@ -69,7 +71,7 @@ const preview    = document.getElementById("tokenPreview");
 const tokenLogo  = document.getElementById("tokenLogo");
 const tokenName  = document.getElementById("tokenName");
 
-/* ---------- live preview (token badge) ---------- */
+/* ---------- live preview badge ---------- */
 addrInput.addEventListener("blur", async () => {
   const addr = addrInput.value.trim().toLowerCase();
   if (!/^0x[a-f0-9]{40}$/.test(addr)) return preview.classList.add("hidden");
@@ -82,11 +84,22 @@ addrInput.addEventListener("blur", async () => {
     const info = (await r.json()).tokens?.[0];
     if (!info) throw new Error();
 
-    const logoUrl = bestLogo(addr, info.logo_url ?? "", chainKey);
-    tokenLogo.src   = logoUrl;
-    tokenLogo.alt   = info.symbol;
-    tokenLogo.style.display = logoUrl ? "" : "none";
-    tokenName.textContent   = `${info.name} (${info.symbol})`;
+    const fallback = trustLogo(addr, chainKey);
+    const primary  = info.logo_url || fallback;
+
+    tokenLogo.src = primary;
+    tokenLogo.style.display = ""; // reset
+    tokenLogo.onerror = () => {
+      if (fallback && tokenLogo.src !== fallback) {
+        tokenLogo.onerror = null;
+        tokenLogo.src = fallback;
+      } else {
+        tokenLogo.style.display = "none";
+      }
+    };
+
+    tokenLogo.alt = info.symbol;
+    tokenName.textContent = `${info.name} (${info.symbol})`;
     preview.classList.remove("hidden");
   } catch {
     preview.classList.add("hidden");
@@ -113,7 +126,7 @@ form.addEventListener("submit", async (e) => {
     const ensMap = await ensMapPromise;
 
     /* time window */
-    const sel    = new FormData(form).get("range");   // all | 7 | 14 | 30
+    const sel    = new FormData(form).get("range");
     const now    = Date.now();
     const fromMs = sel === "all" ? 0 : now - (+sel) * 864e5;
     const TOP_HOLDERS = TOP_CAP[sel];
@@ -129,9 +142,11 @@ form.addEventListener("submit", async (e) => {
     const decimals = tokenInfo?.tokens?.[0]?.decimals ??
                      holdersJson.holders?.[0]?.decimals ?? 18;
     const symbol   = tokenInfo?.tokens?.[0]?.symbol ?? "";
-    const logoURL  = bestLogo(token, tokenInfo?.tokens?.[0]?.logo_url ?? "", chainKey);
 
-    /* build stats map */
+    const simLogo  = tokenInfo?.tokens?.[0]?.logo_url || "";
+    const fallbackLogo = trustLogo(token, chainKey);
+
+    /* stats map */
     const stats = new Map();
     holdersJson.holders.forEach(h => {
       stats.set(h.wallet_address.toLowerCase(), {
@@ -211,15 +226,9 @@ form.addEventListener("submit", async (e) => {
       tr.insertCell().textContent = s.outC;
       tr.insertCell().textContent = fmt(s.outAmt, decimals);
 
-      /* token column */
+      /* Token logo + symbol */
       const tokenCell = tr.insertCell();
-      if (logoURL) {
-        tokenCell.innerHTML =
-          `<img src="${logoURL}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle"
-                onerror="this.style.display='none'"> ${symbol}`;
-      } else {
-        tokenCell.textContent = symbol;
-      }
+      tokenCell.innerHTML = logoHTML(simLogo, fallbackLogo, symbol);
     });
 
     tbl.hidden = false;
