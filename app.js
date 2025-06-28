@@ -1,4 +1,4 @@
-/* =========  app.js  (contract-level scan, ENS, logo fallback, guard)  ========= */
+/* =========  app.js  (token-transfers feed, ENS, logo fallback)  ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -13,7 +13,7 @@ const CHAINS = {
 
 /* ---------- knobs ---------- */
 const TOP_CAP  = { 7: 500, 14: 750, 30: 1000, all: 1000 };
-const TX_LIMIT = 1000;    // pull at most 1k transfers
+const TX_LIMIT = 1000;          // pull at most this many transfers
 
 /* ---------- helpers ---------- */
 const HEX40 = /^0x[a-f0-9]{40}$/i;
@@ -52,7 +52,7 @@ const ensMapPromise = (async () => {
       if (o) map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g, "").trim());
     });
     return map;
-  } catch (e) { console.error("ENS CSV", e); return new Map(); }
+  } catch { return new Map(); }
 })();
 
 /* ---------- DOM ---------- */
@@ -101,20 +101,21 @@ form.addEventListener("submit", async e => {
     const sel    = new FormData(form).get("range");
     const fromMs = sel === "all" ? 0 : Date.now() - (+sel) * 864e5;
 
-    /* meta + transfers */
-    const [meta, { activity }] = await Promise.all([
-      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r => r.ok ? r.json() : null),
-      fetch(`${proxy}/evm/activity/${token}?chain_ids=${chainId}&type=transfer&limit=${TX_LIMIT}`).then(r => r.json())
+    /* meta + transfers (token-transfers feed) */
+    const [meta, txJson] = await Promise.all([
+      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r => r.json()),
+      fetch(`${proxy}/evm/token-transfers/${chainId}/${token}?limit=${TX_LIMIT}`).then(r => r.json())
     ]);
 
-    const decimals = meta?.tokens?.[0]?.decimals ?? 18;
-    const symbol   = meta?.tokens?.[0]?.symbol   ?? "";
-    const simLogo  = meta?.tokens?.[0]?.logo_url ?? "";
+    const transfers = txJson.transfers || [];
+    const decimals = meta.tokens?.[0]?.decimals ?? 18;
+    const symbol   = meta.tokens?.[0]?.symbol   ?? "";
+    const simLogo  = meta.tokens?.[0]?.logo_url ?? "";
     const fallbackLogo = trustLogo(token, chainKey);
 
     /* stats */
     const stats = new Map();
-    activity
+    transfers
       .filter(t => Date.parse(t.block_time) >= fromMs)
       .forEach(t => {
         const from = (t.from_address || "").toLowerCase();
