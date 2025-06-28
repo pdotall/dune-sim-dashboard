@@ -1,4 +1,4 @@
-/* =========  app.js  (token-transfers feed, ENS, logo fallback)  ========= */
+/* =========  app.js  (Win-95 UI, ENS, bullet-proof logo, 1-page activity) ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -11,9 +11,10 @@ const CHAINS = {
   arbitrum : { id: 42161, scan: "https://arbiscan.io/address/" }
 };
 
-/* ---------- knobs ---------- */
-const TOP_CAP  = { 7: 500, 14: 750, 30: 1000, all: 1000 };
-const TX_LIMIT = 1000;          // pull at most this many transfers
+/* ---------- speed knobs ---------- */
+const TOP_CAP   = { 7: 500, 14: 750, 30: 1000, all: 1000 };
+const WORKERS   = 5;      // still parallel, but each does only 1 page
+const MAX_PAGES = 1;      // <= 1 *per holder* request
 
 /* ---------- helpers ---------- */
 const HEX40 = /^0x[a-f0-9]{40}$/i;
@@ -25,10 +26,10 @@ function fmt(bi, dec) {
   return int + (frac ? "." + frac : "");
 }
 
-function trustLogo(addr, chain) {
+function trustLogo(addr, chainKey) {
   try {
-    const c = ethers.utils.getAddress(addr);
-    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${c}/logo.png`;
+    const checksummed = ethers.utils.getAddress(addr);
+    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainKey}/assets/${checksummed}/logo.png`;
   } catch { return ""; }
 }
 
@@ -48,11 +49,12 @@ const ensMapPromise = (async () => {
     const txt = await fetch("data/ens_map.csv").then(r => r.text());
     const map = new Map();
     txt.split(/\r?\n/).slice(1).forEach(l => {
+      if (!l.trim()) return;
       const [o, n = ""] = l.split(/,(.+)/);
-      if (o) map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g, "").trim());
+      if (o) map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g,"").trim());
     });
     return map;
-  } catch { return new Map(); }
+  } catch (e) { console.error("ENS CSV", e); return new Map(); }
 })();
 
 /* ---------- DOM ---------- */
@@ -71,8 +73,10 @@ addrInput.addEventListener("blur", async () => {
   if (!HEX40.test(addr)) return preview.classList.add("hidden");
 
   const chainKey = document.getElementById("chain").value;
+  const chainId  = CHAINS[chainKey].id;
+
   try {
-    const info = (await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${CHAINS[chainKey].id}`)
+    const info = (await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${chainId}`)
                      .then(r => r.json())).tokens?.[0];
     if (!info) throw 0;
 
@@ -89,61 +93,80 @@ addrInput.addEventListener("blur", async () => {
 form.addEventListener("submit", async e => {
   e.preventDefault();
   tbl.hidden = true; tbody.innerHTML = "";
-  out.textContent = "⏳ fetching…";
+  out.textContent = "⏳ fetching holders…";
 
   try {
     const token = addrInput.value.trim().toLowerCase();
-    if (!HEX40.test(token)) throw new Error("Invalid contract");
+    if (!HEX40.test(token)) throw new Error("Invalid contract address");
 
     const chainKey = document.getElementById("chain").value;
     const { id: chainId, scan: scanBase } = CHAINS[chainKey];
 
     const sel    = new FormData(form).get("range");
-    const fromMs = sel === "all" ? 0 : Date.now() - (+sel) * 864e5;
+    const now    = Date.now();
+    const fromMs = sel === "all" ? 0 : now - (+sel) * 864e5;
+    const TOP_HOLDERS = TOP_CAP[sel];
 
-    /* meta + transfers (token-transfers feed) */
-    const [meta, txJson] = await Promise.all([
-      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r => r.json()),
-      fetch(`${proxy}/evm/token-transfers/${chainId}/${token}?limit=${TX_LIMIT}`).then(r => r.json())
+    /* holders + meta in parallel */
+    const [holdersJson, tokenInfo] = await Promise.all([
+      fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${TOP_HOLDERS}`).then(r=>r.json()),
+      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r=>r.json())
     ]);
 
-    const transfers = txJson.transfers || [];
-    const decimals = meta.tokens?.[0]?.decimals ?? 18;
-    const symbol   = meta.tokens?.[0]?.symbol   ?? "";
-    const simLogo  = meta.tokens?.[0]?.logo_url ?? "";
+    const decimals = tokenInfo.tokens?.[0]?.decimals ?? 18;
+    const symbol   = tokenInfo.tokens?.[0]?.symbol   ?? "";
+    const simLogo  = tokenInfo.tokens?.[0]?.logo_url ?? "";
     const fallbackLogo = trustLogo(token, chainKey);
 
-    /* stats */
+    /* base stat rows */
     const stats = new Map();
-    transfers
-      .filter(t => Date.parse(t.block_time) >= fromMs)
-      .forEach(t => {
-        const from = (t.from_address || "").toLowerCase();
-        const to   = (t.to_address   || "").toLowerCase();
-        const val  = BigInt(t.value || 0);
-
-        if (HEX40.test(from)) {
-          if (!stats.has(from)) stats.set(from, {bal:0n,inC:0,outC:0,inAmt:0n,outAmt:0n});
-          const s = stats.get(from);
-          s.outC++; s.outAmt += val; s.bal -= val;
-        }
-        if (HEX40.test(to)) {
-          if (!stats.has(to)) stats.set(to, {bal:0n,inC:0,outC:0,inAmt:0n,outAmt:0n});
-          const s = stats.get(to);
-          s.inC++; s.inAmt += val; s.bal += val;
-        }
+    holdersJson.holders.forEach(h => {
+      stats.set(h.wallet_address.toLowerCase(), {
+        bal: BigInt(h.balance),
+        inC: 0, outC: 0,
+        inAmt: 0n, outAmt: 0n
       });
+    });
 
+    /* queue + workers (1 page per addr) */
+    const queue = [...stats.keys()];
+
+    async function worker() {
+      while (queue.length) {
+        const addr = queue.pop();
+        const s    = stats.get(addr);
+
+        const url = `${proxy}/evm/activity/${addr}`
+          + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=250`;
+        const r = await fetch(url); if (!r.ok) { console.error(await r.text()); continue; }
+        const { activity } = await r.json();
+
+        activity.forEach(ev => {
+          const ts = Date.parse(ev.block_time);
+          if (ts < fromMs) return;
+          if (ev.asset_type !== "erc20" || ev.token_address.toLowerCase() !== token) return;
+
+          const val = BigInt(ev.value);
+          if (["send","burn"].includes(ev.type)) { s.outC++; s.outAmt += val; }
+          if (["receive","mint"].includes(ev.type)) { s.inC++; s.inAmt += val; }
+        });
+
+        out.textContent = `⏳ processed ${TOP_HOLDERS - queue.length}/${TOP_HOLDERS}`;
+      }
+    }
+
+    await Promise.all(Array.from({ length: WORKERS }, worker));
+
+    /* render */
+    const ensMap = await ensMapPromise;
     const rows = Array.from(stats.entries())
       .sort(([,a],[,b]) => Number(b.bal - a.bal))
-      .slice(0, TOP_CAP[sel]);
-
-    const ensMap = await ensMapPromise;
+      .filter(([,s]) => s.inC || s.outC);   // show only addresses with activity
 
     rows.forEach(([addr, s]) => {
       const tr = tbody.insertRow();
       const a  = document.createElement("a");
-      a.href = scanBase + addr; a.textContent = addr; a.target = "_blank"; a.rel = "noopener";
+      a.href = scanBase + addr; a.textContent = addr; a.target="_blank"; a.rel="noopener";
       tr.insertCell().appendChild(a);
 
       tr.insertCell().textContent = ensMap.get(addr) || "";
@@ -156,9 +179,9 @@ form.addEventListener("submit", async e => {
     });
 
     tbl.hidden = false;
-    out.textContent = `✅ ${rows.length} holders`;
+    out.textContent = `✅ ${rows.length} holders scanned`;
   } catch (err) {
     console.error(err);
-    out.textContent = `❌ ` + err;
+    out.textContent = `❌ ${err}`;
   }
 });
