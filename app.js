@@ -1,4 +1,4 @@
-/* =========  app.js  (contract-level scan, ENS, logo fallback)  ========= */
+/* =========  app.js  (contract-level scan, ENS, logo fallback, guard)  ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -13,9 +13,11 @@ const CHAINS = {
 
 /* ---------- knobs ---------- */
 const TOP_CAP  = { 7: 500, 14: 750, 30: 1000, all: 1000 };
-const TX_LIMIT = 1000;    // how many transfers to pull per query
+const TX_LIMIT = 1000;    // pull at most 1k transfers
 
 /* ---------- helpers ---------- */
+const HEX40 = /^0x[a-f0-9]{40}$/i;
+
 function fmt(bi, dec) {
   const s = bi.toString().padStart(dec + 1, "0");
   const int  = s.slice(0, -dec).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -25,7 +27,7 @@ function fmt(bi, dec) {
 
 function trustLogo(addr, chain) {
   try {
-    const c = ethers.utils.getAddress(addr); // checksum
+    const c = ethers.utils.getAddress(addr);
     return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${c}/logo.png`;
   } catch { return ""; }
 }
@@ -40,18 +42,17 @@ function logoHTML(primary, fallback, sym) {
   return `<img src="${first}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${onErr}> ${sym}`;
 }
 
-/* ---------- ENS map (CSV parsed once) ---------- */
+/* ---------- ENS map (parsed once) ---------- */
 const ensMapPromise = (async () => {
   try {
-    const txt = await fetch("data/ens_map.csv").then(r=>r.text());
+    const txt = await fetch("data/ens_map.csv").then(r => r.text());
     const map = new Map();
-    txt.split(/\r?\n/).slice(1).forEach(line=>{
-      if(!line.trim()) return;
-      const [o,n=""]=line.split(/,(.+)/);
-      map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g,"").trim());
+    txt.split(/\r?\n/).slice(1).forEach(l => {
+      const [o, n = ""] = l.split(/,(.+)/);
+      if (o) map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g, "").trim());
     });
     return map;
-  } catch(e){console.error("ENS CSV",e); return new Map();}
+  } catch (e) { console.error("ENS CSV", e); return new Map(); }
 })();
 
 /* ---------- DOM ---------- */
@@ -65,49 +66,45 @@ const tokenLogo = document.getElementById("tokenLogo");
 const tokenName = document.getElementById("tokenName");
 
 /* ---------- live preview badge ---------- */
-addrInput.addEventListener("blur", async()=>{
+addrInput.addEventListener("blur", async () => {
   const addr = addrInput.value.trim().toLowerCase();
-  if(!/^0x[a-f0-9]{40}$/.test(addr)) return preview.classList.add("hidden");
+  if (!HEX40.test(addr)) return preview.classList.add("hidden");
 
   const chainKey = document.getElementById("chain").value;
-  const chainId  = CHAINS[chainKey].id;
-
   try {
-    const info = (await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${chainId}`)
-                     .then(r=>r.json())).tokens?.[0];
-    if(!info) throw 0;
+    const info = (await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${CHAINS[chainKey].id}`)
+                     .then(r => r.json())).tokens?.[0];
+    if (!info) throw 0;
 
-    const fallback = trustLogo(addr, chainKey);
-    tokenLogo.src = info.logo_url || fallback;
-    tokenLogo.style.display="";
-    tokenLogo.onerror = ()=>{ tokenLogo.style.display="none"; };
-    tokenName.textContent=`${info.name} (${info.symbol})`;
+    const fall = trustLogo(addr, chainKey);
+    tokenLogo.src = info.logo_url || fall;
+    tokenLogo.style.display = "";
+    tokenLogo.onerror = () => { tokenLogo.style.display = "none"; };
+    tokenName.textContent = `${info.name} (${info.symbol})`;
     preview.classList.remove("hidden");
-  } catch {
-    preview.classList.add("hidden");
-  }
+  } catch { preview.classList.add("hidden"); }
 });
 
 /* ---------- main ---------- */
-form.addEventListener("submit", async e=>{
+form.addEventListener("submit", async e => {
   e.preventDefault();
   tbl.hidden = true; tbody.innerHTML = "";
   out.textContent = "⏳ fetching…";
 
-  try{
+  try {
     const token = addrInput.value.trim().toLowerCase();
-    if(!/^0x[a-f0-9]{40}$/.test(token)) throw new Error("Invalid address");
+    if (!HEX40.test(token)) throw new Error("Invalid contract");
 
     const chainKey = document.getElementById("chain").value;
     const { id: chainId, scan: scanBase } = CHAINS[chainKey];
 
-    const sel    = new FormData(form).get("range");   // 7 | 14 | 30 | all
-    const fromMs = sel === "all" ? 0 : Date.now() - (+sel)*864e5;
+    const sel    = new FormData(form).get("range");
+    const fromMs = sel === "all" ? 0 : Date.now() - (+sel) * 864e5;
 
-    /* get token meta + transfers in parallel */
+    /* meta + transfers */
     const [meta, { activity }] = await Promise.all([
-      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r=>r.ok?r.json():null).catch(()=>null),
-      fetch(`${proxy}/evm/activity/${token}?chain_ids=${chainId}&type=transfer&limit=${TX_LIMIT}`).then(r=>r.json())
+      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r => r.ok ? r.json() : null),
+      fetch(`${proxy}/evm/activity/${token}?chain_ids=${chainId}&type=transfer&limit=${TX_LIMIT}`).then(r => r.json())
     ]);
 
     const decimals = meta?.tokens?.[0]?.decimals ?? 18;
@@ -115,32 +112,39 @@ form.addEventListener("submit", async e=>{
     const simLogo  = meta?.tokens?.[0]?.logo_url ?? "";
     const fallbackLogo = trustLogo(token, chainKey);
 
-    /* build stats from transfers in window */
+    /* stats */
     const stats = new Map();
-    activity.filter(t=>Date.parse(t.block_time) >= fromMs).forEach(t=>{
-      const val = BigInt(t.value);
-      const f   = t.from_address.toLowerCase();
-      const to  = t.to_address.toLowerCase();
+    activity
+      .filter(t => Date.parse(t.block_time) >= fromMs)
+      .forEach(t => {
+        const from = (t.from_address || "").toLowerCase();
+        const to   = (t.to_address   || "").toLowerCase();
+        const val  = BigInt(t.value || 0);
 
-      if(!stats.has(f))  stats.set(f ,{bal:0n,inC:0,outC:0,inAmt:0n,outAmt:0n});
-      if(!stats.has(to)) stats.set(to,{bal:0n,inC:0,outC:0,inAmt:0n,outAmt:0n});
-
-      stats.get(f ).outC++; stats.get(f ).outAmt += val; stats.get(f ).bal -= val;
-      stats.get(to).inC ++; stats.get(to).inAmt  += val; stats.get(to).bal += val;
-    });
+        if (HEX40.test(from)) {
+          if (!stats.has(from)) stats.set(from, {bal:0n,inC:0,outC:0,inAmt:0n,outAmt:0n});
+          const s = stats.get(from);
+          s.outC++; s.outAmt += val; s.bal -= val;
+        }
+        if (HEX40.test(to)) {
+          if (!stats.has(to)) stats.set(to, {bal:0n,inC:0,outC:0,inAmt:0n,outAmt:0n});
+          const s = stats.get(to);
+          s.inC++; s.inAmt += val; s.bal += val;
+        }
+      });
 
     const rows = Array.from(stats.entries())
-      .sort(([,a],[,b])=> Number(b.bal - a.bal))
+      .sort(([,a],[,b]) => Number(b.bal - a.bal))
       .slice(0, TOP_CAP[sel]);
 
     const ensMap = await ensMapPromise;
 
-    /* render */
-    rows.forEach(([addr,s])=>{
+    rows.forEach(([addr, s]) => {
       const tr = tbody.insertRow();
       const a  = document.createElement("a");
-      a.href = scanBase + addr; a.textContent = addr; a.target="_blank"; a.rel="noopener";
+      a.href = scanBase + addr; a.textContent = addr; a.target = "_blank"; a.rel = "noopener";
       tr.insertCell().appendChild(a);
+
       tr.insertCell().textContent = ensMap.get(addr) || "";
       tr.insertCell().textContent = fmt(s.bal, decimals);
       tr.insertCell().textContent = s.inC;
@@ -150,10 +154,10 @@ form.addEventListener("submit", async e=>{
       tr.insertCell().innerHTML  = logoHTML(simLogo, fallbackLogo, symbol);
     });
 
-    tbl.hidden=false;
-    out.textContent=`✅ ${rows.length} holders`;
-  }catch(err){
+    tbl.hidden = false;
+    out.textContent = `✅ ${rows.length} holders`;
+  } catch (err) {
     console.error(err);
-    out.textContent="❌ "+err;
+    out.textContent = `❌ ` + err;
   }
 });
