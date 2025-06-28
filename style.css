@@ -1,6 +1,6 @@
 /* -------- Windows 95 look -------- */
 body {
-  background: #008080;                 /* classic teal desktop */
+  background: #008080;
   font-family: "MS Sans Serif", Tahoma, sans-serif;
   margin: 40px auto;
   display: flex;
@@ -27,7 +27,6 @@ body {
 .title-bar-text {
   font-weight: bold;
   font-size: 13px;
-  white-space: nowrap;
 }
 
 .title-bar-controls {
@@ -44,11 +43,8 @@ body {
   cursor: default;
 }
 
-.window-body {
-  padding: 10px 12px 18px;
-}
+.window-body { padding: 10px 12px 18px; }
 
-/* -- form layout -- */
 form {
   display: grid;
   gap: 12px;
@@ -101,7 +97,6 @@ button:active {
   border-top-color: #fff;
 }
 
-/* -- table -- */
 table {
   width: 100%;
   border: 2px solid #000;
@@ -116,10 +111,7 @@ th, td {
   font-size: 12px;
 }
 
-th {
-  background: #c0c0c0;
-  font-weight: bold;
-}
+th { background: #c0c0c0; font-weight: bold; }
 
 pre {
   background: #000;
