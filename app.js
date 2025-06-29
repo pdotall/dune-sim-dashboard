@@ -12,7 +12,7 @@ const CHAINS = {
 };
 
 /* ---------- speed knobs ---------- */
-const TOP_CAP   = { 7: 500, 14: 750, 30: 1000, all: 1000 };
+const TOP_CAP   = { 7: 250, 14: 250, 30: 250, all: 250 };
 const WORKERS   = 5;      // still parallel, but each does only 1 page
 const MAX_PAGES = 1;      // <= 1 *per holder* request
 
