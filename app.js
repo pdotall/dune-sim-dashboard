@@ -201,11 +201,42 @@ form.addEventListener("submit", async e => {
       tr.insertCell().innerHTML  = logoHTML(simLogo, fallbackLogo, symbol);
     });
 
-    enableSorting(tbl);           // SORT: activate click-to-sort
+    enableSorting(tbl);              // <= add this line right after rows rendered
     tbl.hidden = false;
     out.textContent = `✅ ${rows.length} holders scanned`;
+    
   } catch (err) {
     console.error(err);
     out.textContent = `❌ ${err}`;
   }
 });
+
+/* ---------- sortable numeric columns ------------------------------------ */
+function enableSorting(table) {
+  if (table.dataset.sortReady) return;     // run once
+  table.dataset.sortReady = "1";
+
+  const numericCols = [2,3,4,5,6];         // Balance … Amount Out
+  const dir = {};                          // column → true / false
+
+  const num = t => parseFloat(t.replace(/,/g, "")) || 0;
+
+  table.tHead.addEventListener("click", e => {
+    const th = e.target.closest("th");
+    if (!th) return;
+    const col = th.cellIndex;
+    if (!numericCols.includes(col)) return;
+
+    dir[col] = !dir[col];
+    const asc = dir[col];
+    const rows = Array.from(table.tBodies[0].rows);
+
+    rows.sort((r1,r2) => {
+      const a = num(r1.cells[col].textContent);
+      const b = num(r2.cells[col].textContent);
+      return asc ? a - b : b - a;
+    });
+
+    rows.forEach(r => table.tBodies[0].appendChild(r));
+  });
+}

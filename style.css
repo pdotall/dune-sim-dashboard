@@ -1,36 +1,103 @@
-/* -------- Windows 95 look -------- */
-body { background:#008080; font-family:"MS Sans Serif",Tahoma,sans-serif;
-       margin:40px auto; display:flex; justify-content:center; }
+/* --- base theme (inspired by makingsoftware.com) ------------------------- */
+:root {
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --fg: #111;
+  --fg-light: #333;
+  --rule: #ddd;
+}
 
-.window { border:2px solid #000; box-shadow:inset -2px -2px 0 #000, inset 2px 2px 0 #fff;
-          background:#c0c0c0; width:780px; }
+* { box-sizing: border-box; }
 
-.title-bar { height:26px; background:#000080; color:#fff; display:flex;
-             align-items:center; justify-content:space-between; padding:0 4px; }
-.title-bar-text { font-weight:bold; font-size:13px; }
-.title-bar-controls { display:flex; gap:2px; }
-.title-bar-controls button { width:16px; height:14px; background:#c0c0c0; border:1px solid #000;
-                             box-shadow:inset -1px -1px 0 #808080, inset 1px 1px 0 #fff; cursor:default; }
+html,body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--fg);
+  background: #fff;
+}
 
-.window-body { padding:10px 12px 18px; }
+header { text-align: center; margin: 5rem 0 3rem; }
+h1 {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.tagline { margin: 0.5rem 0 0; color: var(--fg-light); }
 
-form { display:grid; gap:12px; margin-bottom:10px; }
-label, fieldset { display:flex; flex-direction:column; gap:4px; font-size:13px; }
-fieldset { border:2px groove #808080; padding:6px 8px; }
-fieldset label { flex-direction:row; align-items:center; gap:6px; }
+main { max-width: 750px; margin: 0 auto; padding: 0 1rem; }
 
-input, select, button { font-family:inherit; font-size:13px; }
-input, select { padding:2px 4px; border:2px solid #fff; border-left-color:#808080;
-                border-top-color:#808080; background:#fff; }
-button { padding:3px 14px; background:#c0c0c0; border:2px solid #fff;
-         border-left-color:#808080; border-top-color:#808080; cursor:pointer; }
-button:active { border:2px solid #808080; border-left-color:#fff; border-top-color:#fff; }
+footer { text-align: center; margin: 4rem 0 2rem; color: var(--fg-light); }
 
-table { width:100%; border:2px solid #000; border-collapse:collapse; margin-top:10px; background:#fff; }
-th,td { border:1px solid #808080; padding:4px 6px; font-size:12px; }
-th { background:#c0c0c0; font-weight:bold; }
+fieldset {
+  border: none;
+  margin: 1.2rem 0;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+}
+legend { font-weight: 600; margin-bottom: 0.4rem; }
 
-pre { background:#000; color:#0f0; padding:8px; margin-top:12px; overflow-x:auto; font-size:12px; }
+.field { margin: 1.2rem 0; }
+label { display: block; font-weight: 500; margin-bottom: 0.3rem; }
+input, select {
+  font-family: var(--mono);
+  font-size: 1rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--rule);
+  width: 100%;
+}
+button {
+  font-family: var(--mono);
+  cursor: pointer;
+  padding: 0.55rem 1.4rem;
+  border: 1px solid var(--rule);
+  background: #fafafa;
+}
+button:hover { background: #f0f0f0; }
 
-/* --- sortable header style --- */
-th.sortable { cursor:pointer; text-decoration:underline; }
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.6rem 0 1.4rem;
+  font-family: var(--mono);
+}
+.badge img { width: 20px; height: 20px; border-radius: 50%; }
+
+.hidden { display: none !important; }
+
+/* --- table --------------------------------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+thead th {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--rule);
+}
+tbody td { padding: 0.35rem 0; border-bottom: 1px solid var(--rule); }
+
+th.sortable { cursor: pointer; }
+th.sortable:hover { text-decoration: underline; }
+
+pre {
+  background: #111;
+  color: #0f0;
+  padding: 1rem;
+  margin-top: 2rem;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
