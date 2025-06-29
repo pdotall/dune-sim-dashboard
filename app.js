@@ -1,4 +1,4 @@
-/* =========  app.js  (Win-95 UI, ENS, bullet-proof logo, 1-page activity) ========= */
+/* =========  app.js  (Win-95 UI, ENS, logo fallback, 1-page activity, sortable) ========= */
 
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -12,9 +12,9 @@ const CHAINS = {
 };
 
 /* ---------- speed knobs ---------- */
-const TOP_CAP   = { 7: 250, 14: 250, 30: 250, all: 250 };
-const WORKERS   = 5;      // still parallel, but each does only 1 page
-const MAX_PAGES = 1;      // <= 1 *per holder* request
+const TOP_CAP = { 7: 250, 14: 250, 30: 250, all: 250 };
+const WORKERS = 5;
+const MAX_PAGES = 1;
 
 /* ---------- helpers ---------- */
 const HEX40 = /^0x[a-f0-9]{40}$/i;
@@ -43,6 +43,37 @@ function logoHTML(primary, fallback, sym) {
   return `<img src="${first}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${onErr}> ${sym}`;
 }
 
+/* ---------- SORT: numeric column-sorting helper ---------- */
+function enableSorting(table) {
+  if (table.dataset.sortReady) return;          // run once
+  table.dataset.sortReady = "1";
+
+  const numCols = [2, 3, 4, 5, 6];              // Balance, Tx In, …
+  const dirs = {};                              // colIndex → bool (true = asc)
+
+  function asNumber(txt) {                      // strip commas, parse
+    return parseFloat(txt.replace(/,/g, "")) || 0;
+  }
+
+  table.tHead.addEventListener("click", e => {
+    const th = e.target.closest("th");
+    if (!th) return;
+    const col = th.cellIndex;
+    if (!numCols.includes(col)) return;
+
+    dirs[col] = !dirs[col];                     // toggle
+    const asc = dirs[col];
+
+    const rows = Array.from(table.tBodies[0].rows);
+    rows.sort((r1, r2) => {
+      const a = asNumber(r1.cells[col].textContent);
+      const b = asNumber(r2.cells[col].textContent);
+      return asc ? a - b : b - a;
+    });
+    rows.forEach(r => table.tBodies[0].appendChild(r));
+  });
+}
+
 /* ---------- ENS map (parsed once) ---------- */
 const ensMapPromise = (async () => {
   try {
@@ -51,7 +82,7 @@ const ensMapPromise = (async () => {
     txt.split(/\r?\n/).slice(1).forEach(l => {
       if (!l.trim()) return;
       const [o, n = ""] = l.split(/,(.+)/);
-      if (o) map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g,"").trim());
+      if (o) map.set(o.trim().toLowerCase(), n.replace(/^\[|\]$/g, "").trim());
     });
     return map;
   } catch (e) { console.error("ENS CSV", e); return new Map(); }
@@ -103,14 +134,13 @@ form.addEventListener("submit", async e => {
     const { id: chainId, scan: scanBase } = CHAINS[chainKey];
 
     const sel    = new FormData(form).get("range");
-    const now    = Date.now();
-    const fromMs = sel === "all" ? 0 : now - (+sel) * 864e5;
-    const TOP_HOLDERS = TOP_CAP[sel];
+    const fromMs = sel === "all" ? 0 : Date.now() - (+sel) * 864e5;
+    const CAP = TOP_CAP[sel];
 
     /* holders + meta in parallel */
     const [holdersJson, tokenInfo] = await Promise.all([
-      fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${TOP_HOLDERS}`).then(r=>r.json()),
-      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r=>r.json())
+      fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${CAP}`).then(r => r.json()),
+      fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r => r.json())
     ]);
 
     const decimals = tokenInfo.tokens?.[0]?.decimals ?? 18;
@@ -122,51 +152,44 @@ form.addEventListener("submit", async e => {
     const stats = new Map();
     holdersJson.holders.forEach(h => {
       stats.set(h.wallet_address.toLowerCase(), {
-        bal: BigInt(h.balance),
-        inC: 0, outC: 0,
-        inAmt: 0n, outAmt: 0n
+        bal: BigInt(h.balance), inC: 0, outC: 0, inAmt: 0n, outAmt: 0n
       });
     });
 
     /* queue + workers (1 page per addr) */
     const queue = [...stats.keys()];
-
     async function worker() {
       while (queue.length) {
         const addr = queue.pop();
         const s    = stats.get(addr);
+        const url  = `${proxy}/evm/activity/${addr}?chain_ids=${chainId}&type=send,receive,mint,burn&limit=250`;
+        const r    = await fetch(url);
+        if (!r.ok) { console.error(await r.text()); continue; }
 
-        const url = `${proxy}/evm/activity/${addr}`
-          + `?chain_ids=${chainId}&type=send,receive,mint,burn&limit=250`;
-        const r = await fetch(url); if (!r.ok) { console.error(await r.text()); continue; }
         const { activity } = await r.json();
-
         activity.forEach(ev => {
-          const ts = Date.parse(ev.block_time);
-          if (ts < fromMs) return;
+          if (Date.parse(ev.block_time) < fromMs) return;
           if (ev.asset_type !== "erc20" || ev.token_address.toLowerCase() !== token) return;
-
-          const val = BigInt(ev.value);
-          if (["send","burn"].includes(ev.type)) { s.outC++; s.outAmt += val; }
-          if (["receive","mint"].includes(ev.type)) { s.inC++; s.inAmt += val; }
+          const v = BigInt(ev.value);
+          if (["send","burn"].includes(ev.type))   { s.outC++; s.outAmt += v; }
+          if (["receive","mint"].includes(ev.type)){ s.inC++;  s.inAmt  += v; }
         });
 
-        out.textContent = `⏳ processed ${TOP_HOLDERS - queue.length}/${TOP_HOLDERS}`;
+        out.textContent = `⏳ processed ${CAP - queue.length}/${CAP}`;
       }
     }
-
     await Promise.all(Array.from({ length: WORKERS }, worker));
 
     /* render */
     const ensMap = await ensMapPromise;
     const rows = Array.from(stats.entries())
-      .sort(([,a],[,b]) => Number(b.bal - a.bal))
-      .filter(([,s]) => s.inC || s.outC);   // show only addresses with activity
+      .filter(([, s]) => s.inC || s.outC)
+      .sort(([, a], [, b]) => Number(b.bal - a.bal));
 
     rows.forEach(([addr, s]) => {
       const tr = tbody.insertRow();
       const a  = document.createElement("a");
-      a.href = scanBase + addr; a.textContent = addr; a.target="_blank"; a.rel="noopener";
+      a.href = scanBase + addr; a.textContent = addr; a.target = "_blank"; a.rel = "noopener";
       tr.insertCell().appendChild(a);
 
       tr.insertCell().textContent = ensMap.get(addr) || "";
@@ -178,6 +201,7 @@ form.addEventListener("submit", async e => {
       tr.insertCell().innerHTML  = logoHTML(simLogo, fallbackLogo, symbol);
     });
 
+    enableSorting(tbl);           // SORT: activate click-to-sort
     tbl.hidden = false;
     out.textContent = `✅ ${rows.length} holders scanned`;
   } catch (err) {
