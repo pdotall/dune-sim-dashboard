@@ -1,123 +1,36 @@
 /* -------- Windows 95 look -------- */
-body {
-  background: #008080;
-  font-family: "MS Sans Serif", Tahoma, sans-serif;
-  margin: 40px auto;
-  display: flex;
-  justify-content: center;
-}
+body { background:#008080; font-family:"MS Sans Serif",Tahoma,sans-serif;
+       margin:40px auto; display:flex; justify-content:center; }
 
-.window {
-  border: 2px solid #000;
-  box-shadow: inset -2px -2px 0 #000, inset 2px 2px 0 #fff;
-  background: #c0c0c0;
-  width: 780px;
-}
+.window { border:2px solid #000; box-shadow:inset -2px -2px 0 #000, inset 2px 2px 0 #fff;
+          background:#c0c0c0; width:780px; }
 
-.title-bar {
-  height: 26px;
-  background: #000080;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-}
+.title-bar { height:26px; background:#000080; color:#fff; display:flex;
+             align-items:center; justify-content:space-between; padding:0 4px; }
+.title-bar-text { font-weight:bold; font-size:13px; }
+.title-bar-controls { display:flex; gap:2px; }
+.title-bar-controls button { width:16px; height:14px; background:#c0c0c0; border:1px solid #000;
+                             box-shadow:inset -1px -1px 0 #808080, inset 1px 1px 0 #fff; cursor:default; }
 
-.title-bar-text {
-  font-weight: bold;
-  font-size: 13px;
-}
+.window-body { padding:10px 12px 18px; }
 
-.title-bar-controls {
-  display: flex;
-  gap: 2px;
-}
+form { display:grid; gap:12px; margin-bottom:10px; }
+label, fieldset { display:flex; flex-direction:column; gap:4px; font-size:13px; }
+fieldset { border:2px groove #808080; padding:6px 8px; }
+fieldset label { flex-direction:row; align-items:center; gap:6px; }
 
-.title-bar-controls button {
-  width: 16px;
-  height: 14px;
-  background: #c0c0c0;
-  border: 1px solid #000;
-  box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff;
-  cursor: default;
-}
+input, select, button { font-family:inherit; font-size:13px; }
+input, select { padding:2px 4px; border:2px solid #fff; border-left-color:#808080;
+                border-top-color:#808080; background:#fff; }
+button { padding:3px 14px; background:#c0c0c0; border:2px solid #fff;
+         border-left-color:#808080; border-top-color:#808080; cursor:pointer; }
+button:active { border:2px solid #808080; border-left-color:#fff; border-top-color:#fff; }
 
-.window-body { padding: 10px 12px 18px; }
+table { width:100%; border:2px solid #000; border-collapse:collapse; margin-top:10px; background:#fff; }
+th,td { border:1px solid #808080; padding:4px 6px; font-size:12px; }
+th { background:#c0c0c0; font-weight:bold; }
 
-form {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 10px;
-}
+pre { background:#000; color:#0f0; padding:8px; margin-top:12px; overflow-x:auto; font-size:12px; }
 
-label, fieldset {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-}
-
-fieldset {
-  border: 2px groove #808080;
-  padding: 6px 8px;
-}
-
-fieldset label {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-}
-
-input, select, button {
-  font-family: inherit;
-  font-size: 13px;
-}
-
-input, select {
-  padding: 2px 4px;
-  border: 2px solid #fff;
-  border-left-color: #808080;
-  border-top-color: #808080;
-  background: #fff;
-}
-
-button {
-  padding: 3px 14px;
-  background: #c0c0c0;
-  border: 2px solid #fff;
-  border-left-color: #808080;
-  border-top-color: #808080;
-  cursor: pointer;
-}
-
-button:active {
-  border: 2px solid #808080;
-  border-left-color: #fff;
-  border-top-color: #fff;
-}
-
-table {
-  width: 100%;
-  border: 2px solid #000;
-  border-collapse: collapse;
-  margin-top: 10px;
-  background: #fff;
-}
-
-th, td {
-  border: 1px solid #808080;
-  padding: 4px 6px;
-  font-size: 12px;
-}
-
-th { background: #c0c0c0; font-weight: bold; }
-
-pre {
-  background: #000;
-  color: #0f0;
-  padding: 8px;
-  margin-top: 12px;
-  overflow-x: auto;
-  font-size: 12px;
-}
+/* --- sortable header style --- */
+th.sortable { cursor:pointer; text-decoration:underline; }
