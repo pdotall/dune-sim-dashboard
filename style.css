@@ -1,6 +1,5 @@
 /* ------------------------------------------------------------------
    p’s-value – visual style
-   Inspired by makingsoftware.com
 ------------------------------------------------------------------- */
 
 :root {
@@ -23,10 +22,7 @@ html, body {
 }
 
 /* ---------- header ------------------------------------------------ */
-header {
-  text-align: center;
-  margin: 5rem 0 3rem;
-}
+header { text-align: center; margin: 5rem 0 3rem; }
 h1 {
   font-family: var(--mono);
   font-weight: 600;
@@ -34,26 +30,15 @@ h1 {
   letter-spacing: -0.02em;
   margin: 0;
 }
-.tagline {
-  margin: 0.5rem 0 0;
-  color: var(--fg-light);
-}
+.tagline { margin: 0.5rem 0 0; color: var(--fg-light); }
 
 /* ---------- layout ------------------------------------------------ */
-main {
-  max-width: 1180px;          /* wider to fit all table columns   */
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-footer {
-  text-align: center;
-  margin: 4rem 0 2rem;
-  color: var(--fg-light);
-}
+main   { max-width: 1180px; margin: 0 auto; padding: 0 1rem; }
+footer { text-align: center; margin: 4rem 0 2rem; color: var(--fg-light); }
 
 /* ---------- form -------------------------------------------------- */
 .field { margin: 1.2rem 0; }
-label { display: block; font-weight: 500; margin-bottom: 0.3rem; }
+label  { display: block; font-weight: 500; margin-bottom: 0.3rem; }
 
 input, select {
   font-family: var(--mono);
@@ -72,7 +57,7 @@ button {
 }
 button:hover { background: #f0f0f0; }
 
-/* radio buttons inline with their label text */
+/* radio buttons inline (no wrap) */
 fieldset {
   border: none;
   margin: 1.2rem 0;
@@ -85,7 +70,8 @@ fieldset label {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin-right: 1rem;
+  margin-right: 1.2rem;
+  white-space: nowrap;                 /* ← keep "7 d" on one line */
 }
 
 /* ---------- live badge ------------------------------------------- */
@@ -101,11 +87,11 @@ fieldset label {
 .hidden { display: none !important; }
 
 /* ---------- table ------------------------------------------------ */
-.table-wrap { overflow-x: auto; }      /* scroll horizontally if needed */
+.table-wrap { overflow-x: auto; }
 
 table {
   width: 100%;
-  min-width: 860px;                    /* keep columns from squishing   */
+  min-width: 860px;
   border-collapse: collapse;
   margin-top: 2rem;
   font-family: var(--mono);
@@ -121,10 +107,18 @@ thead th {
 tbody td {
   padding: 0.35rem 0;
   border-bottom: 1px solid var(--rule);
-  white-space: nowrap;                /* keep numbers on one line      */
+  white-space: nowrap;            /* keep long ints on one line */
 }
 
-/* right-align numeric columns: Balance, Tx/Amount In/Out */
+/* ENS column width + ellipsis (2nd column) */
+thead th:nth-child(2),
+tbody td:nth-child(2) {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* right-align numeric columns (Balance, Tx/Amount) */
 tbody td:nth-child(3),
 tbody td:nth-child(4),
 tbody td:nth-child(5),
