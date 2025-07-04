@@ -71,6 +71,15 @@ thead th{
   padding-bottom:.35rem;
   border-bottom:2px solid var(--rule);
 }
+
+/* add arrow icon to sortable headers */
+th.sortable::after{
+  content:"↕";                          /* up-down double arrow */
+  font-size:0.7em;
+  margin-left:.4rem;
+  color:var(--fg-light);
+}
+
 tbody td{
   padding:.32rem 0;
   border-bottom:1px solid var(--rule);
@@ -78,8 +87,8 @@ tbody td{
   text-align:left;
 }
 
-/* Owner column — fixed width so ENS never drifts */
-thead th:first-child{width:42ch;}     /* exact width */
+/* Owner column — fixed width so ENS stays aligned */
+thead th:first-child{width:42ch;}
 tbody td:first-child{
   width:42ch;
   overflow:hidden;
@@ -93,7 +102,7 @@ tbody td.ens.expand{white-space:normal;max-width:none;}
 tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
 
-/* sortable headers */
+/* sortable hover */
 th.sortable{cursor:pointer;}
 th.sortable:hover{text-decoration:underline;}
 
