@@ -65,15 +65,26 @@ table{
   font-family:var(--mono);
   font-size:.8rem;
 }
-thead th{text-align:left;font-weight:600;padding-bottom:.35rem;border-bottom:2px solid var(--rule);}
-tbody td{padding:.32rem 0;border-bottom:1px solid var(--rule);white-space:nowrap;text-align:left;}
+thead th{
+  text-align:left;
+  font-weight:600;
+  padding-bottom:.35rem;
+  border-bottom:2px solid var(--rule);
+}
+tbody td{
+  padding:.32rem 0;
+  border-bottom:1px solid var(--rule);
+  white-space:nowrap;
+  text-align:left;
+}
 
-/* Owner column cap so ENS sits closer */
-thead th:first-child{max-width:42ch;}   /* ← NEW */
-tbody td:first-child{                   /* ← NEW */
-  max-width:42ch;
+/* Owner column — fixed width so ENS never drifts */
+thead th:first-child{width:42ch;}     /* exact width */
+tbody td:first-child{
+  width:42ch;
   overflow:hidden;
   text-overflow:ellipsis;
+  padding-right:.8rem;                /* gap before ENS */
 }
 
 /* ENS column */
@@ -82,14 +93,16 @@ tbody td.ens.expand{white-space:normal;max-width:none;}
 tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
 
-/* numbers are already left-aligned by default now */
-
 /* sortable headers */
 th.sortable{cursor:pointer;}
 th.sortable:hover{text-decoration:underline;}
 
 /* ---------- output pane ------------------------------------------ */
 pre{
-  background:#111;color:#0f0;padding:1rem;margin-top:2rem;
-  overflow-x:auto;font-family:var(--mono);font-size:.8rem;
+  background:#111;color:#0f0;
+  padding:1rem;
+  margin-top:2rem;
+  overflow-x:auto;
+  font-family:var(--mono);
+  font-size:.8rem;
 }
