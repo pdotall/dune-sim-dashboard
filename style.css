@@ -57,44 +57,36 @@ fieldset label{display:inline-flex;align-items:center;gap:.3rem;margin-right:1.2
 /* ---------- table ------------------------------------------------ */
 .table-wrap{overflow-x:auto;}
 
-/* ---------- table ------------------------------------------------ */
-.table-wrap { overflow-x: auto; }
+table{
+  width:100%;
+  min-width:1000px;
+  border-collapse:collapse;
+  margin-top:2rem;
+  font-family:var(--mono);
+  font-size:.8rem;
+}
+thead th{text-align:left;font-weight:600;padding-bottom:.35rem;border-bottom:2px solid var(--rule);}
+tbody td{padding:.32rem 0;border-bottom:1px solid var(--rule);white-space:nowrap;text-align:left;}
 
-table {
-  width: 100%;
-  min-width: 1000px;          /* wider so headers and numbers match */
-  border-collapse: collapse;
-  margin-top: 2rem;
-  font-family: var(--mono);
-  font-size: 0.8rem;          /* slightly smaller text */
+/* Owner column cap so ENS sits closer */
+thead th:first-child{max-width:42ch;}   /* ← NEW */
+tbody td:first-child{                   /* ← NEW */
+  max-width:42ch;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-thead th {
-  text-align: left;           /* headings flush left */
-  font-weight: 600;
-  padding-bottom: 0.35rem;
-  border-bottom: 2px solid var(--rule);
-}
+/* ENS column */
+tbody td.ens{max-width:18ch;overflow:hidden;text-overflow:ellipsis;}
+tbody td.ens.expand{white-space:normal;max-width:none;}
+tbody td.ens .short{cursor:pointer;text-decoration:underline;}
+tbody td.ens .full{display:none;}
 
-tbody td {
-  padding: 0.32rem 0;
-  border-bottom: 1px solid var(--rule);
-  white-space: nowrap;        /* keep numbers on one line */
-  text-align: left;           /* ← numbers now left-aligned */
-}
+/* numbers are already left-aligned by default now */
 
-/* ENS column (expandable) */
-tbody td.ens {
-  max-width: 18ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-tbody td.ens.expand { white-space: normal; max-width: none; }
-tbody td.ens .short { cursor: pointer; text-decoration: underline; }
-tbody td.ens .full  { display: none; }
-
-th.sortable { cursor: pointer; }
-th.sortable:hover { text-decoration: underline; }
+/* sortable headers */
+th.sortable{cursor:pointer;}
+th.sortable:hover{text-decoration:underline;}
 
 /* ---------- output pane ------------------------------------------ */
 pre{
