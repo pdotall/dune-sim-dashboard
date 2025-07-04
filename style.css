@@ -55,9 +55,7 @@ button{
 button:hover{background:#f0f0f0;}
 
 fieldset{
-  border:none;
-  margin:1.2rem 0;
-  padding:0;
+  border:none;margin:1.2rem 0;padding:0;
   font-family:var(--mono);
   font-size:.9rem;
 }
@@ -67,7 +65,7 @@ fieldset label{
   align-items:center;
   gap:.3rem;
   margin-right:1.2rem;
-  white-space:nowrap;              /* keep “7 d” on one line */
+  white-space:nowrap;
 }
 
 /* ---------- live badge ------------------------------------------- */
@@ -98,12 +96,12 @@ thead th{
 tbody td{
   padding:.35rem 0;
   border-bottom:1px solid var(--rule);
-  white-space:nowrap;              /* keep long ints on one line */
+  white-space:nowrap;
 }
 
-/* ENS column (2nd) — truncate + expand */
+/* ENS column (2nd) – 18 characters then … */
 tbody td.ens{
-  max-width:12ch;
+  max-width:18ch;               /* ↑ was 12ch */
   overflow:hidden;
   text-overflow:ellipsis;
 }
@@ -111,10 +109,7 @@ tbody td.ens.expand{
   white-space:normal;
   max-width:none;
 }
-tbody td.ens .short{
-  cursor:pointer;
-  text-decoration:underline;
-}
+tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
 
 /* right-align numeric columns (3-6) */
