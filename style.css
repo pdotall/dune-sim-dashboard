@@ -20,13 +20,8 @@ html,body{
 
 /* ---------- header ------------------------------------------------ */
 header{text-align:center;margin:5rem 0 3rem;}
-h1{
-  font-family:var(--mono);
-  font-weight:600;
-  font-size:clamp(2.6rem,6vw,4rem);
-  letter-spacing:-.02em;
-  margin:0;
-}
+h1{font-family:var(--mono);font-weight:600;font-size:clamp(2.6rem,6vw,4rem);
+   letter-spacing:-.02em;margin:0;}
 .tagline{margin:.5rem 0 0;color:var(--fg-light);}
 
 /* ---------- layout ------------------------------------------------ */
@@ -38,41 +33,24 @@ footer{text-align:center;margin:4rem 0 2rem;color:var(--fg-light);}
 label{display:block;font-weight:500;margin-bottom:.3rem;}
 
 input,select{
-  font-family:var(--mono);
-  font-size:1rem;
-  padding:.4rem .5rem;
-  border:1px solid var(--rule);
-  width:100%;
+  font-family:var(--mono);font-size:1rem;
+  padding:.4rem .5rem;border:1px solid var(--rule);width:100%;
 }
-
 button{
-  font-family:var(--mono);
-  cursor:pointer;
-  padding:.55rem 1.4rem;
-  border:1px solid var(--rule);
-  background:#fafafa;
+  font-family:var(--mono);cursor:pointer;
+  padding:.55rem 1.4rem;border:1px solid var(--rule);background:#fafafa;
 }
 button:hover{background:#f0f0f0;}
 
 fieldset{
   border:none;margin:1.2rem 0;padding:0;
-  font-family:var(--mono);
-  font-size:.9rem;
+  font-family:var(--mono);font-size:.9rem;
 }
 legend{font-weight:600;margin-bottom:.4rem;}
-fieldset label{
-  display:inline-flex;
-  align-items:center;
-  gap:.3rem;
-  margin-right:1.2rem;
-  white-space:nowrap;
-}
+fieldset label{display:inline-flex;align-items:center;gap:.3rem;margin-right:1.2rem;white-space:nowrap;}
 
 /* ---------- live badge ------------------------------------------- */
-.badge{
-  display:flex;align-items:center;gap:.6rem;
-  margin:.6rem 0 1.4rem;font-family:var(--mono);
-}
+.badge{display:flex;align-items:center;gap:.6rem;margin:.6rem 0 1.4rem;font-family:var(--mono);}
 .badge img{width:20px;height:20px;border-radius:50%;}
 .hidden{display:none !important;}
 
@@ -80,54 +58,30 @@ fieldset label{
 .table-wrap{overflow-x:auto;}
 
 table{
-  width:100%;
-  min-width:860px;
-  border-collapse:collapse;
-  margin-top:2rem;
-  font-family:var(--mono);
-  font-size:.85rem;
+  width:100%;min-width:860px;border-collapse:collapse;margin-top:2rem;
+  font-family:var(--mono);font-size:.85rem;
 }
-thead th{
-  text-align:left;
-  font-weight:600;
-  padding-bottom:.4rem;
-  border-bottom:2px solid var(--rule);
-}
-tbody td{
-  padding:.35rem 0;
-  border-bottom:1px solid var(--rule);
-  white-space:nowrap;
-}
+thead th{text-align:left;font-weight:600;padding-bottom:.4rem;border-bottom:2px solid var(--rule);}
+tbody td{padding:.35rem 0;border-bottom:1px solid var(--rule);white-space:nowrap;}
 
-/* ENS column (2nd) – 18 characters then … */
-tbody td.ens{
-  max-width:18ch;               /* ↑ was 12ch */
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-tbody td.ens.expand{
-  white-space:normal;
-  max-width:none;
-}
+/* ENS column */
+tbody td.ens{max-width:18ch;overflow:hidden;text-overflow:ellipsis;}
+tbody td.ens.expand{white-space:normal;max-width:none;}
 tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
 
-/* right-align numeric columns (3-6) */
+/* right-align numeric columns (3–7) */
 tbody td:nth-child(3),
 tbody td:nth-child(4),
 tbody td:nth-child(5),
-tbody td:nth-child(6){text-align:right;}
+tbody td:nth-child(6),
+tbody td:nth-child(7){text-align:right;}
 
 th.sortable{cursor:pointer;}
 th.sortable:hover{text-decoration:underline;}
 
 /* ---------- output pane ------------------------------------------ */
 pre{
-  background:#111;
-  color:#0f0;
-  padding:1rem;
-  margin-top:2rem;
-  overflow-x:auto;
-  font-family:var(--mono);
-  font-size:.8rem;
+  background:#111;color:#0f0;padding:1rem;margin-top:2rem;
+  overflow-x:auto;font-family:var(--mono);font-size:.8rem;
 }

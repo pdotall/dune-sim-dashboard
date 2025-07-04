@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>p’s-value</title>
 
-  <!-- IBM Plex mono/sans — closest free alternative to “Departure Mono” -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
-
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -22,10 +20,9 @@
     <form id="queryForm">
       <div class="field">
         <label for="contract">Contract address</label>
-        <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
+        <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
       </div>
 
-      <!-- live token badge -->
       <div id="tokenPreview" class="hidden badge">
         <img id="tokenLogo" alt="">
         <span id="tokenName"></span>
@@ -44,34 +41,29 @@
 
       <fieldset>
         <legend>Time window</legend>
-        <label><input type="radio" name="range" value="7"  checked> 7 d</label>
-        <label><input type="radio" name="range" value="14"> 14 d</label>
-        <label><input type="radio" name="range" value="30"> 30 d</label>
+        <label><input type="radio" name="range" value="7"  checked> 7&nbsp;d</label>
+        <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
+        <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
         <label><input type="radio" name="range" value="all"> All-time</label>
       </fieldset>
 
       <button type="submit">Run</button>
     </form>
 
-    <table id="balTable" hidden>
-      <thead>
-        <tr>
-          <th>Owner</th>
-          <th>ENS</th>
-          <th class="sortable" data-col="2">Balance</th>
-          <th class="sortable" data-col="3">Tx In</th>
-          <th class="sortable" data-col="4">Amount In</th>
-          <th class="sortable" data-col="5">Tx Out</th>
-          <th class="sortable" data-col="6">Amount Out</th>
-          <th>Token</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-   <div class="table-wrap">
+    <div class="table-wrap">
       <table id="balTable" hidden>
-        <thead>…</thead>
+        <thead>
+          <tr>
+            <th>Owner</th>
+            <th>ENS</th>
+            <th class="sortable">Balance</th>
+            <th class="sortable">Tx&nbsp;In</th>
+            <th class="sortable">Amount&nbsp;In</th>
+            <th class="sortable">Tx&nbsp;Out</th>
+            <th class="sortable">Amount&nbsp;Out</th>
+            <th>Token</th>
+          </tr>
+        </thead>
         <tbody></tbody>
       </table>
     </div>
@@ -79,9 +71,7 @@
     <pre id="output">← results / errors appear here</pre>
   </main>
 
-  <footer>
-    <small>© 2025 p’s-value</small>
-  </footer>
+  <footer><small>© 2025 p’s-value</small></footer>
 
   <script src="app.js"></script>
 </body>
