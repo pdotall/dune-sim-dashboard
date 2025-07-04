@@ -74,9 +74,9 @@ thead th{
 
 /* add arrow icon to sortable headers */
 th.sortable::after{
-  content:"↕";                          /* up-down double arrow */
-  font-size:0.7em;
-  margin-left:.4rem;
+  content:"⇅";            /* double-arrow w/ longer stem */
+  font-size:0.9em;        /* ↑ bigger than before        */
+  margin-left:.35rem;
   color:var(--fg-light);
 }
 
