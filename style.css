@@ -57,28 +57,44 @@ fieldset label{display:inline-flex;align-items:center;gap:.3rem;margin-right:1.2
 /* ---------- table ------------------------------------------------ */
 .table-wrap{overflow-x:auto;}
 
-table{
-  width:100%;min-width:860px;border-collapse:collapse;margin-top:2rem;
-  font-family:var(--mono);font-size:.85rem;
+/* ---------- table ------------------------------------------------ */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  min-width: 1000px;          /* wider so headers and numbers match */
+  border-collapse: collapse;
+  margin-top: 2rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;          /* slightly smaller text */
 }
-thead th{text-align:left;font-weight:600;padding-bottom:.4rem;border-bottom:2px solid var(--rule);}
-tbody td{padding:.35rem 0;border-bottom:1px solid var(--rule);white-space:nowrap;}
 
-/* ENS column */
-tbody td.ens{max-width:18ch;overflow:hidden;text-overflow:ellipsis;}
-tbody td.ens.expand{white-space:normal;max-width:none;}
-tbody td.ens .short{cursor:pointer;text-decoration:underline;}
-tbody td.ens .full{display:none;}
+thead th {
+  text-align: left;           /* headings flush left */
+  font-weight: 600;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--rule);
+}
 
-/* right-align numeric columns (3–7) */
-tbody td:nth-child(3),
-tbody td:nth-child(4),
-tbody td:nth-child(5),
-tbody td:nth-child(6),
-tbody td:nth-child(7){text-align:right;}
+tbody td {
+  padding: 0.32rem 0;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;        /* keep numbers on one line */
+  text-align: left;           /* ← numbers now left-aligned */
+}
 
-th.sortable{cursor:pointer;}
-th.sortable:hover{text-decoration:underline;}
+/* ENS column (expandable) */
+tbody td.ens {
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+tbody td.ens.expand { white-space: normal; max-width: none; }
+tbody td.ens .short { cursor: pointer; text-decoration: underline; }
+tbody td.ens .full  { display: none; }
+
+th.sortable { cursor: pointer; }
+th.sortable:hover { text-decoration: underline; }
 
 /* ---------- output pane ------------------------------------------ */
 pre{
