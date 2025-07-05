@@ -1,4 +1,4 @@
-/* =========  app.js  (cap picker + 1-day window) ========= */
+/* =========  app.js  (cap picker + 1-day window + card UI) ========= */
 
 const proxy="https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -15,12 +15,24 @@ const WORKERS=5;
 const HEX40=/^0x[a-f0-9]{40}$/i;
 
 /* ---------- helpers ---------- */
-const fmt=(bi,dec)=>{const s=bi.toString().padStart(dec+1,"0"),
-  i=s.slice(0,-dec).replace(/\B(?=(\d{3})+(?!\d))/g,","),f=s.slice(-dec,-dec+2).replace(/0+$/,"");
-  return i+(f?"."+f:"");};
-const trustLogo=(addr,chain)=>{try{return`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${ethers.utils.getAddress(addr)}/logo.png`;}catch{return"";}};
-const logoHTML=(p,f,sym)=>!p&&!f?sym:`<img src="${p||f}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${
-  f?`onerror="if(this.src!=='${f.replace(/"/g,"&quot;")}'){this.src='${f}';}else{this.style.display='none';}"`:`onerror="this.style.display='none'"`}> ${sym}`;
+const fmt=(bi,dec)=>{
+  const s=bi.toString().padStart(dec+1,"0");
+  const i=s.slice(0,-dec).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  const f=s.slice(-dec,-dec+2).replace(/0+$/,"");
+  return i+(f?"."+f:"");
+};
+const trustLogo=(addr,chain)=>{
+  try{
+    return`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${ethers.utils.getAddress(addr)}/logo.png`;
+  }catch{return"";}
+};
+function logoHTML(p,f,sym){
+  if(!p&&!f)return sym;
+  const esc=f.replace(/"/g,"&quot;");
+  return `<img src="${p||f}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${
+    f?`onerror="if(this.src!=='${esc}'){this.src='${esc}';}else{this.style.display='none';}"`:`onerror="this.style.display='none'"`
+  }> ${sym}`;
+}
 
 /* ---------- sorting ---------- */
 function enableSorting(tbl){
@@ -42,7 +54,8 @@ const ensMapPromise=(async()=>{
   try{
     const txt=await fetch("data/ens_map.csv").then(r=>r.text()),m=new Map();
     txt.split(/\r?\n/).slice(1).forEach(l=>{
-      const[o,n=""]=l.split(/,(.+)/);if(o)m.set(o.trim().toLowerCase(),n.replace(/^\[|\]$/g,"").trim());
+      const[o,n=""]=l.split(/,(.+)/);
+      if(o)m.set(o.trim().toLowerCase(),n.replace(/^\[|\]$/g,"").trim());
     });
     return m;
   }catch(e){console.error("ENS CSV",e);return new Map();}
@@ -53,7 +66,7 @@ const form=document.getElementById("queryForm"),
       addrInput=document.getElementById("contract"),
       tbl=document.getElementById("balTable"),
       tbody=tbl.querySelector("tbody"),
-      out=document.getElementById("output"),
+      status=document.getElementById("output"),
       preview=document.getElementById("tokenPreview"),
       tokenLogo=document.getElementById("tokenLogo"),
       tokenName=document.getElementById("tokenName"),
@@ -81,7 +94,9 @@ addrInput.addEventListener("blur",async()=>{
 /* ---------- main ---------- */
 form.addEventListener("submit",async e=>{
   e.preventDefault();
-  tbl.hidden=true;tbody.innerHTML="";out.textContent="⏳ fetching…";
+  tbl.hidden=true;
+  tbody.innerHTML="";
+  status.textContent="⏳ fetching…";
 
   try{
     const token=addrInput.value.trim().toLowerCase();
@@ -96,7 +111,6 @@ form.addEventListener("submit",async e=>{
     const activeOnly=whaleToggle.checked;
     const fromMs=days==="all"?0:Date.now()-(+days)*864e5;
 
-    /* fetch holders + meta */
     const [holdersJson,meta]=await Promise.all([
       fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${cap}`).then(r=>r.json()),
       fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r=>r.json())
@@ -107,12 +121,10 @@ form.addEventListener("submit",async e=>{
           simLogo =meta.tokens?.[0]?.logo_url??"",
           fallbackLogo=trustLogo(token,chainKey);
 
-    /* init map */
     const stats=new Map();
     holdersJson.holders.forEach(h=>stats.set(
       h.wallet_address.toLowerCase(),{bal:BigInt(h.balance),inC:0,outC:0,inAmt:0n,outAmt:0n}));
 
-    /* activity workers */
     const queue=[...stats.keys()];
     await Promise.all(Array.from({length:WORKERS},async()=>{
       while(queue.length){
@@ -127,7 +139,7 @@ form.addEventListener("submit",async e=>{
           if(["send","burn"].includes(ev.type)){s.outC++;s.outAmt+=v;}
           if(["receive","mint"].includes(ev.type)){s.inC++;s.inAmt+=v;}
         });
-        out.textContent=`⏳ processed ${cap-queue.length}/${cap}`;
+        status.textContent=`⏳ processed ${cap-queue.length}/${cap}`;
       }
     }));
 
@@ -139,12 +151,13 @@ form.addEventListener("submit",async e=>{
     rows.forEach(([addr,s])=>{
       const tr=tbody.insertRow();
 
-      /* owner */
       const link=document.createElement("a");
-      link.href=scanBase+addr;link.textContent=addr;link.target="_blank";link.rel="noopener";
+      link.href=scanBase+addr;
+      link.textContent=addr;
+      link.target="_blank";
+      link.rel="noopener";
       tr.insertCell().appendChild(link);
 
-      /* ENS */
       const ensCell=tr.insertCell();ensCell.className="ens";
       const ens=(ensMap.get(addr)||"").trim();
       if(ens.length>18){
@@ -157,7 +170,6 @@ form.addEventListener("submit",async e=>{
         });
       }else ensCell.textContent=ens;
 
-      /* numbers & token */
       tr.insertCell().textContent=fmt(s.bal,decimals);
       tr.insertCell().textContent=s.inC;
       tr.insertCell().textContent=fmt(s.inAmt,decimals);
@@ -168,6 +180,9 @@ form.addEventListener("submit",async e=>{
 
     enableSorting(tbl);
     tbl.hidden=false;
-    out.textContent=`✅ ${rows.length} holders`;
-  }catch(err){console.error(err);out.textContent="❌ "+err;}
+    status.textContent=`✅ ${rows.length} holders`;
+  }catch(err){
+    console.error(err);
+    status.textContent="❌ "+err;
+  }
 });
