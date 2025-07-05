@@ -49,6 +49,27 @@ fieldset{
 legend{font-weight:600;margin-bottom:.4rem;}
 fieldset label{display:inline-flex;align-items:center;gap:.3rem;margin-right:1.2rem;white-space:nowrap;}
 
+/* ---------- whales toggle ---------------------------------------- */
+fieldset.whale-toggle{
+  margin:1.5rem 0;
+  font-family:var(--mono);
+  display:flex;align-items:center;gap:1rem;
+}
+fieldset.whale-toggle label.card{
+  cursor:pointer;
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:.8rem 1.2rem;
+  user-select:none;
+}
+fieldset.whale-toggle label.card input{display:none;}
+fieldset.whale-toggle label.card span{display:block;text-align:center;}
+fieldset.whale-toggle label.card small{font-size:.65em;color:var(--fg-light);}
+fieldset.whale-toggle label.card input:checked + span{
+  background:#0d6efd10;border:1px solid #0d6efd;
+}
+fieldset.whale-toggle .or{font-size:.8rem;color:var(--fg-light);}
+
 /* ---------- live badge ------------------------------------------- */
 .badge{display:flex;align-items:center;gap:.6rem;margin:.6rem 0 1.4rem;font-family:var(--mono);}
 .badge img{width:20px;height:20px;border-radius:50%;}
@@ -71,11 +92,13 @@ thead th{
   padding-bottom:.35rem;
   border-bottom:2px solid var(--rule);
 }
+th.sortable{cursor:pointer;}
+th.sortable:hover{text-decoration:underline;}
 
-/* add arrow icon to sortable headers */
+/* larger sort indicator */
 th.sortable::after{
-  content:"↕";            /* double-arrow w/ longer stem */
-  font-size:1.1em;        /* ↑ bigger than before        */
+  content:"⇅";
+  font-size:.9em;
   margin-left:.35rem;
   color:var(--fg-light);
 }
@@ -93,7 +116,7 @@ tbody td:first-child{
   width:42ch;
   overflow:hidden;
   text-overflow:ellipsis;
-  padding-right:.8rem;                /* gap before ENS */
+  padding-right:.8rem;
 }
 
 /* ENS column */
@@ -101,10 +124,6 @@ tbody td.ens{max-width:18ch;overflow:hidden;text-overflow:ellipsis;}
 tbody td.ens.expand{white-space:normal;max-width:none;}
 tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
-
-/* sortable hover */
-th.sortable{cursor:pointer;}
-th.sortable:hover{text-decoration:underline;}
 
 /* ---------- output pane ------------------------------------------ */
 pre{

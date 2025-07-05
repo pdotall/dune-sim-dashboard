@@ -1,78 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>p’s-value</title>
 
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
-  <header>
-    <h1>p’s-value</h1>
-    <p class="tagline">A tiny tool for peeking at token-holder flows.</p>
-  </header>
+<header>
+  <h1>p’s-value</h1>
+  <p class="tagline">A tiny tool for peeking at token-holder flows.</p>
+</header>
 
-  <main>
-    <form id="queryForm">
-      <div class="field">
-        <label for="contract">Contract address</label>
-        <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
-      </div>
-
-      <div id="tokenPreview" class="hidden badge">
-        <img id="tokenLogo" alt="">
-        <span id="tokenName"></span>
-      </div>
-
-      <div class="field">
-        <label for="chain">Chain</label>
-        <select id="chain">
-          <option value="ethereum">Ethereum</option>
-          <option value="polygon">Polygon</option>
-          <option value="base">Base</option>
-          <option value="optimism">Optimism</option>
-          <option value="arbitrum">Arbitrum</option>
-        </select>
-      </div>
-
-      <fieldset>
-        <legend>Time window</legend>
-        <label><input type="radio" name="range" value="7"  checked> 7&nbsp;d</label>
-        <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
-        <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
-        <label><input type="radio" name="range" value="all"> All-time</label>
-      </fieldset>
-
-      <button type="submit">Run</button>
-    </form>
-
-    <div class="table-wrap">
-      <table id="balTable" hidden>
-        <thead>
-          <tr>
-            <th>Owner</th>
-            <th>ENS</th>
-            <th class="sortable">Balance</th>
-            <th class="sortable">Tx&nbsp;In</th>
-            <th class="sortable">Amount&nbsp;In</th>
-            <th class="sortable">Tx&nbsp;Out</th>
-            <th class="sortable">Amount&nbsp;Out</th>
-            <th>Token</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+<main>
+  <form id="queryForm">
+    <div class="field">
+      <label for="contract">Contract address</label>
+      <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
     </div>
 
-    <pre id="output">← results / errors appear here</pre>
-  </main>
+    <div id="tokenPreview" class="hidden badge">
+      <img id="tokenLogo" alt="">
+      <span id="tokenName"></span>
+    </div>
 
-  <footer><small>© 2025 p’s-value</small></footer>
+    <div class="field">
+      <label for="chain">Chain</label>
+      <select id="chain">
+        <option value="ethereum">Ethereum</option>
+        <option value="polygon">Polygon</option>
+        <option value="base">Base</option>
+        <option value="optimism">Optimism</option>
+        <option value="arbitrum">Arbitrum</option>
+      </select>
+    </div>
 
-  <script src="app.js"></script>
+    <fieldset>
+      <legend>Time window</legend>
+      <label><input type="radio" name="range" value="7"  checked> 7&nbsp;d</label>
+      <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
+      <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
+      <label><input type="radio" name="range" value="all"> All-time</label>
+    </fieldset>
+
+    <!-- NEW whales filter -->
+    <fieldset class="whale-toggle">
+      <legend>Whales</legend>
+      <label class="card">
+        <input type="radio" name="whaleFilter" value="active" checked>
+        <span>Active<br><small>(Tx&nbsp;In &amp; Out)</small></span>
+      </label>
+      <span class="or">OR</span>
+      <label class="card">
+        <input type="radio" name="whaleFilter" value="all">
+        <span>All&nbsp;whales</span>
+      </label>
+    </fieldset>
+
+    <button type="submit">Run</button>
+  </form>
+
+  <div class="table-wrap">
+    <table id="balTable" hidden>
+      <thead>
+        <tr>
+          <th>Owner</th>
+          <th>ENS</th>
+          <th class="sortable">Balance</th>
+          <th class="sortable">Tx&nbsp;In</th>
+          <th class="sortable">Amount&nbsp;In</th>
+          <th class="sortable">Tx&nbsp;Out</th>
+          <th class="sortable">Amount&nbsp;Out</th>
+          <th>Token</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <pre id="output">← results / errors appear here</pre>
+</main>
+
+<footer><small>© 2025 p’s-value</small></footer>
+
+<script src="app.js"></script>
 </body>
 </html>
