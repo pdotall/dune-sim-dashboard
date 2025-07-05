@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>p’s-value</title>
 
-  <!-- fonts -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-  <!-- styles -->
   <link rel="stylesheet" href="style.css">
-  <!-- ethers (for checksum in JS) -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -48,10 +45,20 @@
       <!-- time window -->
       <fieldset>
         <legend>Time window</legend>
-        <label><input type="radio" name="range" value="7"  checked> 7&nbsp;d</label>
+        <label><input type="radio" name="range" value="1"> 1&nbsp;d</label>
+        <label><input type="radio" name="range" value="7" checked> 7&nbsp;d</label>
         <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
         <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
         <label><input type="radio" name="range" value="all"> All-time</label>
+      </fieldset>
+
+      <!-- number of whales -->
+      <fieldset>
+        <legend>Number&nbsp;of whales</legend>
+        <label><input type="radio" name="cap" value="100"> 100</label>
+        <label><input type="radio" name="cap" value="250" checked> 250</label>
+        <label><input type="radio" name="cap" value="500"> 500</label>
+        <label><input type="radio" name="cap" value="1000"> 1000</label>
       </fieldset>
 
       <!-- whales toggle -->
@@ -63,7 +70,6 @@
         <span id="toggleText" class="toggle-desc">Active whales</span>
       </div>
 
-      <!-- run -->
       <button type="submit">Run</button>
     </form>
 
@@ -91,7 +97,6 @@
 
   <footer><small>© 2025 p’s-value</small></footer>
 
-  <!-- app logic -->
   <script src="app.js"></script>
 </body>
 </html>

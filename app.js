@@ -1,4 +1,4 @@
-/* =========  app.js  (toggle active/all whales) ========= */
+/* =========  app.js  (cap picker + 1-day window) ========= */
 
 const proxy="https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -11,26 +11,18 @@ const CHAINS={
   arbitrum:{id:42161,scan:"https://arbiscan.io/address/"}
 };
 
-/* ---------- knobs ---------- */
-const TOP_CAP={7:250,14:250,30:250,all:250};
 const WORKERS=5;
+const HEX40=/^0x[a-f0-9]{40}$/i;
 
 /* ---------- helpers ---------- */
-const HEX40=/^0x[a-f0-9]{40}$/i;
 const fmt=(bi,dec)=>{const s=bi.toString().padStart(dec+1,"0"),
   i=s.slice(0,-dec).replace(/\B(?=(\d{3})+(?!\d))/g,","),f=s.slice(-dec,-dec+2).replace(/0+$/,"");
   return i+(f?"."+f:"");};
 const trustLogo=(addr,chain)=>{try{return`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${ethers.utils.getAddress(addr)}/logo.png`;}catch{return"";}};
-const logoHTML=(p,f,sym)=>{
-  if(!p&&!f)return sym;
-  const esc=f.replace(/"/g,"&quot;");
-  return `<img src="${p||f}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${
-    f?`onerror="if(this.src!=='${esc}'){this.src='${esc}';}else{this.style.display='none';}"`:
-      `onerror="this.style.display='none'"`
-  }> ${sym}`;
-};
+const logoHTML=(p,f,sym)=>!p&&!f?sym:`<img src="${p||f}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" ${
+  f?`onerror="if(this.src!=='${f.replace(/"/g,"&quot;")}'){this.src='${f}';}else{this.style.display='none';}"`:`onerror="this.style.display='none'"`}> ${sym}`;
 
-/* ---------- sorting helper ---------- */
+/* ---------- sorting ---------- */
 function enableSorting(tbl){
   if(tbl.dataset.sortReady)return;
   tbl.dataset.sortReady="1";
@@ -68,7 +60,6 @@ const form=document.getElementById("queryForm"),
       whaleToggle=document.getElementById("whaleToggle"),
       toggleText=document.getElementById("toggleText");
 
-/* update label text when toggled */
 whaleToggle.addEventListener("change",()=>toggleText.textContent=whaleToggle.checked?"Active whales":"All whales");
 
 /* ---------- live preview badge ---------- */
@@ -100,13 +91,14 @@ form.addEventListener("submit",async e=>{
           {id:chainId,scan:scanBase}=CHAINS[chainKey];
 
     const fd=new FormData(form);
-    const sel=fd.get("range");
+    const days=fd.get("range");
+    const cap=parseInt(fd.get("cap")||250,10);
     const activeOnly=whaleToggle.checked;
-    const fromMs=sel==="all"?0:Date.now()-(+sel)*864e5;
-    const CAP=TOP_CAP[sel];
+    const fromMs=days==="all"?0:Date.now()-(+days)*864e5;
 
+    /* fetch holders + meta */
     const [holdersJson,meta]=await Promise.all([
-      fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${CAP}`).then(r=>r.json()),
+      fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${cap}`).then(r=>r.json()),
       fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r=>r.json())
     ]);
 
@@ -115,11 +107,12 @@ form.addEventListener("submit",async e=>{
           simLogo =meta.tokens?.[0]?.logo_url??"",
           fallbackLogo=trustLogo(token,chainKey);
 
+    /* init map */
     const stats=new Map();
     holdersJson.holders.forEach(h=>stats.set(
       h.wallet_address.toLowerCase(),{bal:BigInt(h.balance),inC:0,outC:0,inAmt:0n,outAmt:0n}));
 
-    /* parallel workers */
+    /* activity workers */
     const queue=[...stats.keys()];
     await Promise.all(Array.from({length:WORKERS},async()=>{
       while(queue.length){
@@ -134,7 +127,7 @@ form.addEventListener("submit",async e=>{
           if(["send","burn"].includes(ev.type)){s.outC++;s.outAmt+=v;}
           if(["receive","mint"].includes(ev.type)){s.inC++;s.inAmt+=v;}
         });
-        out.textContent=`⏳ processed ${CAP-queue.length}/${CAP}`;
+        out.textContent=`⏳ processed ${cap-queue.length}/${cap}`;
       }
     }));
 
@@ -145,6 +138,7 @@ form.addEventListener("submit",async e=>{
 
     rows.forEach(([addr,s])=>{
       const tr=tbody.insertRow();
+
       /* owner */
       const link=document.createElement("a");
       link.href=scanBase+addr;link.textContent=addr;link.target="_blank";link.rel="noopener";
@@ -157,9 +151,9 @@ form.addEventListener("submit",async e=>{
         ensCell.innerHTML=`<span class="short">${ens.slice(0,18)}…</span><span class="full">${ens.replace(/\s+/g,"<br>")}</span>`;
         ensCell.querySelector(".short").addEventListener("click",()=>{
           ensCell.classList.toggle("expand");
-          const o=ensCell.classList.contains("expand");
-          ensCell.querySelector(".short").style.display=o?"none":"inline";
-          ensCell.querySelector(".full").style.display=o?"inline":"none";
+          const open=ensCell.classList.contains("expand");
+          ensCell.querySelector(".short").style.display=open?"none":"inline";
+          ensCell.querySelector(".full").style.display=open?"inline":"none";
         });
       }else ensCell.textContent=ens;
 
