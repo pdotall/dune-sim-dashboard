@@ -13,14 +13,14 @@
 
   <header>
     <h1>p’s-value</h1>
-    <p class="tagline">A tiny tool for peeking at token-holder flows.</p>
+    <p class="tagline">A tiny tool for peeking at whale's flows.</p>
   </header>
 
   <main>
     <form id="queryForm">
       <!-- contract -->
       <div class="field">
-        <label for="contract">Contract address</label>
+        <label for="contract">Token contract address</label>
         <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
       </div>
 
@@ -95,7 +95,14 @@
     <pre id="output">← results / errors appear here</pre>
   </main>
 
-  <footer><small>© 2025 p’s-value</small></footer>
+  <footer>
+    <small>
+      made by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a><br><br>
+      If this helped you, consider donating:<br>
+      <strong>EVM&nbsp;→</strong> 0x40aA1c4882F4D85CC43120ebE53c8cD1DC540e78<br>
+      <strong>Solana&nbsp;→</strong> 83K1RCjK1oewjYdaLxgwWNXompBK2xt49tZv6nLQbXMW
+    </small>
+  </footer>
 
   <script src="app.js"></script>
 </body>
