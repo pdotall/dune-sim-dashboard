@@ -1,119 +1,78 @@
 /* ------------------------------------------------------------------
-   p’s-value – streamlined, single-row form
+   p’s-value  – minimal overrides on top of Pico CSS
 ------------------------------------------------------------------- */
 
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap');
+
+/* ----- brand ---------------------------------------------------- */
 :root{
   --mono:'IBM Plex Mono',monospace;
   --sans:'IBM Plex Sans',system-ui,sans-serif;
-  --fg:#111;
-  --fg-light:#555;
-  --rule:#e4e4e4;
   --brand:#0d6efd;
 }
-*{box-sizing:border-box;}
 
-html,body{
-  margin:0;
-  font-family:var(--sans);
-  font-size:16px;
-  line-height:1.55;
-  color:var(--fg);
-  background:#fff;
-}
+/* ----- global tweaks ------------------------------------------- */
+html,body{font-family:var(--sans);}
+h1{font-family:var(--mono);letter-spacing:-.02em;margin-bottom:.25rem}
+.tagline{margin-top:.75rem;font-size:1rem;color:var(--gray-600);}
 
-/* ---------- header ------------------------------------------------ */
-header{text-align:center;margin:5rem 0 3.5rem}
-h1{font-family:var(--mono);font-weight:600;font-size:clamp(2.6rem,6vw,4rem);
-    letter-spacing:-.02em;margin:0}
-.tagline{margin:.6rem 0 0;color:var(--fg-light);}
-
-/* ---------- form (horizontal flex) -------------------------------- */
+/* form section: just rely on Pico grid ---------------------------------- */
 form{
-  max-width:1280px;
-  margin:0 auto 3.5rem;
-  padding:0 1rem;
-  display:flex;
-  flex-wrap:wrap;
-  align-items:flex-end;
-  gap:2.2rem 2.8rem;
+  --gap:2rem;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  align-items:end;
 }
 
-/* Each “block” keeps label/input together */
-.field{display:flex;flex-direction:column;min-width:180px}
-.field label{font-weight:500;margin-bottom:.35rem}
+/* keep token/chain labels tight */
+label{margin-bottom:.4rem;font-weight:500}
 
-input[type=text],select{
-  font-family:var(--mono);
-  font-size:1rem;
-  padding:.5rem .6rem;
-  border:1px solid var(--rule);
-  border-radius:4px;
+/* ------------ toggle switch (override Pico’s checkbox) -----------*/
+.switch{
+  position:relative;width:56px;height:28px;display:inline-block
 }
-
-/* radio / toggle groups */
-fieldset{
-  border:none;margin:0;padding:0;
-  font-family:var(--mono);font-size:.9rem;
-  display:flex;align-items:center;gap:1.2rem;
-  flex-wrap:wrap;
-}
-legend{font-weight:600;margin:0 1rem 0 0}
-fieldset label{display:inline-flex;align-items:center;gap:.32rem}
-
-/* toggle switch */
-.switch-wrap{display:flex;align-items:center;gap:.8rem;font-family:var(--mono)}
-.switch{position:relative;width:56px;height:28px}
 .switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;cursor:pointer;background:#ccc;border-radius:34px;transition:.3s}
-.slider:before{content:"";position:absolute;height:24px;width:24px;left:2px;bottom:2px;
-  background:#fff;border-radius:50%;transition:.3s}
+.slider{
+  position:absolute;inset:0;background:var(--gray-500);border-radius:34px;
+  cursor:pointer;transition:.3s
+}
+.slider:before{
+  content:"";position:absolute;height:24px;width:24px;left:2px;bottom:2px;
+  background:#fff;border-radius:50%;transition:.3s
+}
 input:checked + .slider{background:var(--brand)}
 input:checked + .slider:before{transform:translateX(28px)}
-.toggle-desc{font-size:.9rem}
+.toggle-desc{font-family:var(--mono);font-size:.9rem;margin-left:.6rem}
 
-/* live badge */
-.badge{display:flex;align-items:center;gap:.7rem;font-family:var(--mono)}
-.badge img{width:20px;height:20px;border-radius:50%}
-.hidden{display:none !important}
-
-/* Run + status */
-button{
-  font-family:var(--mono);
-  padding:.62rem 1.6rem;
-  border:1px solid var(--rule);
-  background:#fafafa;border-radius:4px;cursor:pointer
-}
-button:hover{background:#f3f3f3}
-.status{font-family:var(--mono);font-size:.85rem;color:var(--fg-light)}
-
-/* ---------- table ------------------------------------------------ */
-.table-wrap{overflow-x:auto;margin-top:2.4rem;padding:0 1rem}
-table{width:100%;min-width:1000px;border-collapse:collapse;font-family:var(--mono);font-size:.8rem}
-thead th{text-align:left;font-weight:600;padding-bottom:.4rem;border-bottom:2px solid var(--rule)}
+/* -------- table tweaks ----------------------------------------- */
+.table-wrap{overflow-x:auto}
+table{font-family:var(--mono);font-size:.8rem}
 th.sortable{cursor:pointer}
 th.sortable:hover{text-decoration:underline}
-th.sortable::after{content:"⇅";font-size:.9em;margin-left:.35rem;color:var(--fg-light)}
-tbody td{padding:.35rem 0;border-bottom:1px solid var(--rule);white-space:nowrap;text-align:left}
+th.sortable::after{content:"⇅";margin-left:.35rem;color:var(--gray-600);font-size:.8em}
+
+/* Owner + ENS columns */
 thead th:first-child{width:42ch}
-tbody td:first-child{width:42ch;overflow:hidden;text-overflow:ellipsis;padding-right:.8rem}
+tbody td:first-child{
+  width:42ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
 tbody td.ens{max-width:18ch;overflow:hidden;text-overflow:ellipsis}
 tbody td.ens.expand{white-space:normal;max-width:none}
 tbody td.ens .short{cursor:pointer;text-decoration:underline}
 tbody td.ens .full{display:none}
 
-/* ---------- footer ---------------------------------------------- */
-.footer{text-align:center;margin:4rem 0 3rem;padding:0 1rem}
-.footer .by{font-family:var(--mono);font-weight:500;margin:0 0 1.4rem}
-.donate-card{display:inline-block;padding:1.3rem 1.8rem;border:1px solid var(--rule);
-  border-radius:10px;background:#fff}
-.donate-card .tip{margin:0 0 .9rem;color:var(--fg-light);font-size:.92rem}
-.donations{list-style:none;padding:0;margin:0;font-family:var(--mono);font-size:.8rem}
-.donations li{display:flex;justify-content:center;align-items:center;gap:.55rem;margin:.35rem 0}
+/* ------- footer card ------------------------------------------- */
+.footer{margin:4rem auto 3rem;text-align:center}
+.footer .by{font-family:var(--mono);font-weight:500;margin-bottom:1.4rem}
+.donate-card{
+  display:inline-block;padding:1.4rem 2rem;border:1px solid var(--gray-300);
+  border-radius:10px;background:#fff;box-shadow:0 3px 8px rgb(0 0 0 / .05)
+}
+.donate-card .tip{margin:0 0 1rem;color:var(--gray-600);font-size:.92rem}
+.donations{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:.8rem}
+.donations li{display:flex;gap:.55rem;justify-content:center;margin:.35rem 0}
 .donations span{font-weight:600;color:var(--brand)}
-.donations code{background:#f9f9f9;border:1px solid var(--rule);padding:.25rem .55rem;border-radius:4px;word-break:break-all}
-
-/* ---------- responsive tweaks ------------------------------------ */
-@media(max-width:780px){
-  form{flex-direction:column;align-items:flex-start}
-  fieldset{gap:1rem}
+.donations code{
+  background:#f8f9fa;border:1px solid var(--gray-300);
+  padding:.25rem .55rem;border-radius:4px;word-break:break-all
 }
