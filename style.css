@@ -209,3 +209,62 @@ footer code{
   border-radius:4px;
   word-break:break-all;
 }
+
+/* ---------- wrapper ------------------------------------------------ */
+.wrapper{
+  max-width:680px;
+  margin:0 auto;
+  padding:0 1rem;
+}
+
+/* ---------- typography scale (IBM Plex) --------------------------- */
+h1{font-size:clamp(2.4rem,6vw,3.5rem);}
+h3,label,legend{font-family:var(--mono);}
+label,legend{font-size:1rem;font-weight:500;color:var(--fg);}
+body,button,input,select,fieldset{font-size:1rem;}
+
+/* ---------- stack spacing like MUI spacing={3} ------------------- */
+.form-stack > *{margin-bottom:1.5rem;}
+.form-stack > *:last-child{margin-bottom:0;}
+
+/* ---------- primary action button --------------------------------- */
+.run-btn{
+  display:block;
+  align-self:center;
+  background:var(--brand);
+  color:#fff;
+  border-radius:6px;
+  border:none;
+  padding:.65rem 1.8rem;
+  font-family:var(--mono);
+  font-weight:500;
+  cursor:pointer;
+}
+.run-btn:hover{background:#0b5ed7;}
+
+/* ---------- paper container --------------------------------------- */
+.paper{
+  border:1px solid var(--rule);
+  border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,.06);
+  padding:1rem 1rem 0;
+}
+
+/* ---------- table polish ----------------------------------------- */
+thead th{position:sticky;top:0;background:#fff;z-index:2;}
+tbody tr:nth-of-type(odd){background:#fafafa;}
+/* right-align mono numeric */
+tbody td:nth-child(3),
+tbody td:nth-child(4),
+tbody td:nth-child(5),
+tbody td:nth-child(6){
+  text-align:right;
+  font-family:var(--mono);
+}
+/* address nowrap tooltip */
+tbody td:first-child a{white-space:nowrap;text-overflow:ellipsis;display:inline-block;max-width:38ch;overflow:hidden;}
+tbody td:first-child a:hover{overflow:visible;background:#fff;}
+
+/* ---------- footer hierarchy ------------------------------------- */
+footer .by{color:var(--fg-light);}
+footer code{background:#f1f1f1;}

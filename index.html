@@ -1,44 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>p’s-value</title>
 
+  <!-- fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- Your fonts (already present) -->
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <!-- app stylesheet -->
+  <link rel="stylesheet" href="style.css" />
 
-<!-- Your overrides (style.css) — keep this LAST so it wins in the cascade -->
-<link rel="stylesheet" href="style.css">
-
+  <!-- ethers (needed by app.js) -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
+  <!-- ------------- header --------------------------------------- -->
   <header>
     <h1>p’s-value</h1>
     <p class="tagline">A tiny tool for peeking at whale flows.</p>
   </header>
 
-  <main class="card">
-    <form id="queryForm">
-      <div class="grid">
 
-        <!-- contract -->
-        <div class="field">
+  <!-- ------------- constrained canvas --------------------------- -->
+  <div class="wrapper">
+
+    <main>
+
+      <!-- ========================== FORM ======================== -->
+      <form id="queryForm" class="form-stack">
+
+        <!-- token address ------------------------------------------------ -->
+        <div class="field full">
           <label for="contract">Token contract address</label>
           <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
         </div>
 
-        <!-- live badge -->
-        <div id="tokenPreview" class="hidden badge col-span-2">
-          <img id="tokenLogo" alt="">
-          <span id="tokenName"></span>
-        </div>
-
-        <!-- chain -->
-        <div class="field">
+        <!-- chain selector ---------------------------------------------- -->
+        <div class="field full">
           <label for="chain">Chain</label>
           <select id="chain">
             <option value="ethereum">Ethereum</option>
@@ -49,8 +49,14 @@
           </select>
         </div>
 
-        <!-- whales toggle -->
-        <div class="field switch-wrap">
+        <!-- live token badge (hidden by default) ------------------------ -->
+        <div id="tokenPreview" class="hidden badge full">
+          <img id="tokenLogo" alt="">
+          <span id="tokenName"></span>
+        </div>
+
+        <!-- active / all whales toggle ---------------------------------- -->
+        <div class="field switch-wrap full">
           <label class="switch">
             <input type="checkbox" id="whaleToggle" checked>
             <span class="slider"></span>
@@ -58,18 +64,18 @@
           <span id="toggleText" class="toggle-desc">Active whales</span>
         </div>
 
-        <!-- time window -->
-        <fieldset class="col-span-2">
+        <!-- time-window radios ----------------------------------------- -->
+        <fieldset class="full">
           <legend>Time window</legend>
-          <label><input type="radio" name="range" value="1"> 1 d</label>
-          <label><input type="radio" name="range" value="7" checked> 7 d</label>
-          <label><input type="radio" name="range" value="14"> 14 d</label>
-          <label><input type="radio" name="range" value="30"> 30 d</label>
+          <label><input type="radio" name="range" value="1"> 1&nbsp;d</label>
+          <label><input type="radio" name="range" value="7" checked> 7&nbsp;d</label>
+          <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
+          <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
           <label><input type="radio" name="range" value="all"> All-time</label>
         </fieldset>
 
-        <!-- number -->
-        <fieldset class="col-span-2">
+        <!-- number-of-whales radios ------------------------------------ -->
+        <fieldset class="full">
           <legend>Number of whales</legend>
           <label><input type="radio" name="cap" value="100"> 100</label>
           <label><input type="radio" name="cap" value="250" checked> 250</label>
@@ -77,46 +83,53 @@
           <label><input type="radio" name="cap" value="1000"> 1000</label>
         </fieldset>
 
-        <!-- run -->
-        <div class="actions col-span-2">
-          <button type="submit" class="run-btn">Run query</button>
-          <small id="output" class="status"></small>
-        </div>
+        <!-- primary action --------------------------------------------- -->
+        <button type="submit" class="run-btn">Run&nbsp;query</button>
+
+      </form>
+      <!-- ======================== /FORM ========================= -->
+
+      <!-- results table ---------------------------------------------- -->
+      <div class="table-wrap paper">
+        <table id="balTable" hidden>
+          <thead>
+            <tr>
+              <th>Owner</th>
+              <th>ENS</th>
+              <th class="sortable">Balance</th>
+              <th class="sortable">Tx&nbsp;In</th>
+              <th class="sortable">Amount&nbsp;In</th>
+              <th class="sortable">Tx&nbsp;Out</th>
+              <th class="sortable">Amount&nbsp;Out</th>
+              <th>Token</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-    </form>
 
-    <!-- results -->
-    <div class="table-wrap">
-      <table id="balTable" hidden>
-        <thead>
-          <tr>
-            <th>Owner</th>
-            <th>ENS</th>
-            <th class="sortable">Balance</th>
-            <th class="sortable">Tx In</th>
-            <th class="sortable">Amount In</th>
-            <th class="sortable">Tx Out</th>
-            <th class="sortable">Amount Out</th>
-            <th>Token</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </main>
+      <!-- status / errors -------------------------------------------- -->
+      <pre id="output">← results / errors appear here</pre>
 
-  <footer class="footer">
-    <p class="by">made&nbsp;by&nbsp;<a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
+    </main>
+
+  </div><!-- /.wrapper -->
+
+
+  <!-- ------------- footer -------------------------------------- -->
+  <footer>
+    <p class="by">made&nbsp;by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
 
     <div class="donate-card">
       <p class="tip">If this helped you, consider donating</p>
       <ul class="donations">
-        <li><span>EVM</span><code>0x40aA1c4882F4D85CC43120ebE53c8cD1DC540e78</code></li>
-        <li><span>Solana</span><code>83K1RCjK1oewjYdaLxgwWNXompBK2xt49tZv6nLQbXMW</code></li>
+        <li><span>EVM</span> <code>0x40aA1c4882F4D85CC43120ebE53c8cD1DC540e78</code></li>
+        <li><span>Solana</span> <code>83K1RCjK1oewjYdaLxgwWNXompBK2xt49tZv6nLQbXMW</code></li>
       </ul>
     </div>
   </footer>
 
+  <!-- app logic -->
   <script src="app.js"></script>
 </body>
 </html>
