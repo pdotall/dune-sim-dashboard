@@ -5,41 +5,41 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>p’s-value</title>
 
-  <!-- Fonts -->
+  <!-- typefaces -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <!-- local stylesheet -->
+  <link rel="stylesheet" href="style.css">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Ethers (for app.js) -->
+  <!-- ethers (used by app.js) -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
-  <!-- ---------- header ---------- -->
+  <!-- ---------- heading ---------------------------------------- -->
   <header>
     <h1>p’s-value</h1>
     <p class="tagline">A tiny tool for peeking at whale flows.</p>
   </header>
 
-  <!-- ---------- main ------------ -->
+
+  <!-- ---------- main canvas ------------------------------------ -->
   <main>
 
     <form id="queryForm">
 
-      <!-- contract address -->
+      <!-- address ------------------------------------------------ -->
       <div class="field">
         <label for="contract">Token contract address</label>
         <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
       </div>
 
-      <!-- live preview badge -->
+      <!-- live badge --------------------------------------------- -->
       <div id="tokenPreview" class="hidden badge">
         <img id="tokenLogo" alt="">
         <span id="tokenName"></span>
       </div>
 
-      <!-- chain -->
+      <!-- chain --------------------------------------------------- -->
       <div class="field">
         <label for="chain">Chain</label>
         <select id="chain">
@@ -51,7 +51,7 @@
         </select>
       </div>
 
-      <!-- whales toggle -->
+      <!-- whales toggle ------------------------------------------ -->
       <div class="field switch-wrap">
         <label class="switch">
           <input type="checkbox" id="whaleToggle" checked>
@@ -60,7 +60,7 @@
         <span id="toggleText" class="toggle-desc">Active whales</span>
       </div>
 
-      <!-- time window -->
+      <!-- time window -------------------------------------------- -->
       <fieldset>
         <legend>Time window</legend>
         <label><input type="radio" name="range" value="1"> 1&nbsp;d</label>
@@ -70,7 +70,7 @@
         <label><input type="radio" name="range" value="all"> All-time</label>
       </fieldset>
 
-      <!-- number of whales -->
+      <!-- cap ----------------------------------------------------- -->
       <fieldset>
         <legend>Number of whales</legend>
         <label><input type="radio" name="cap" value="100"> 100</label>
@@ -79,22 +79,23 @@
         <label><input type="radio" name="cap" value="1000"> 1000</label>
       </fieldset>
 
-      <!-- run -->
-      <button type="submit">Run</button>
+      <!-- primary action ----------------------------------------- -->
+      <button type="submit" class="run-btn">Run&nbsp;query</button>
     </form>
 
-    <!-- results -->
-    <div class="table-wrap">
+
+    <!-- results table ------------------------------------------- -->
+    <div class="table-wrap paper">
       <table id="balTable" hidden>
         <thead>
           <tr>
             <th>Owner</th>
             <th>ENS</th>
             <th class="sortable">Balance</th>
-            <th class="sortable">Tx In</th>
-            <th class="sortable">Amount In</th>
-            <th class="sortable">Tx Out</th>
-            <th class="sortable">Amount Out</th>
+            <th class="sortable">Tx&nbsp;In</th>
+            <th class="sortable">Amount&nbsp;In</th>
+            <th class="sortable">Tx&nbsp;Out</th>
+            <th class="sortable">Amount&nbsp;Out</th>
             <th>Token</th>
           </tr>
         </thead>
@@ -102,12 +103,15 @@
       </table>
     </div>
 
-    <pre id="output">← results / errors appear here</pre>
+    <!-- status / errors (kept for JS; hidden by CSS) ------------- -->
+    <pre id="output" class="hidden">← results / errors appear here</pre>
+
   </main>
 
-  <!-- ---------- footer ---------- -->
+
+  <!-- ---------- footer ----------------------------------------- -->
   <footer>
-    <p class="by">made by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
+    <p class="by">made&nbsp;by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
 
     <p class="tip">If this helped you, consider donating</p>
     <ul class="donations">
@@ -116,6 +120,7 @@
     </ul>
   </footer>
 
+  <!-- logic -->
   <script src="app.js"></script>
 </body>
 </html>

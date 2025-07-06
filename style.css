@@ -108,6 +108,35 @@ input:checked + .slider:before{transform:translateX(28px);}
 .badge img{width:20px;height:20px;border-radius:50%;}
 .hidden{display:none !important;}
 
+/* ---------- focus ring ------------------------------------------- */
+input:focus,select:focus,button:focus,
+.switch input:focus + .slider{
+  outline:2px solid var(--brand);
+  outline-offset:2px;
+}
+
+/* ---------- primary button --------------------------------------- */
+.run-btn{
+  display:block;
+  margin:2rem auto 0;
+  background:var(--brand);
+  color:#fff;
+  border-radius:6px;
+  border:none;
+  padding:.65rem 1.8rem;
+  font-family:var(--mono);
+  font-weight:500;
+}
+.run-btn:hover{background:#0b5ed7;}
+
+/* ---------- paper wrapper ---------------------------------------- */
+.paper{
+  border:1px solid var(--rule);
+  border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,.06);
+  padding:1rem 1rem 0;
+}
+
 /* ---------- table ------------------------------------------------ */
 .table-wrap{overflow-x:auto;}
 
@@ -124,6 +153,10 @@ thead th{
   font-weight:600;
   padding-bottom:.35rem;
   border-bottom:2px solid var(--rule);
+  position:sticky;
+  top:0;
+  background:#fff;
+  z-index:2;
 }
 th.sortable{cursor:pointer;}
 th.sortable:hover{text-decoration:underline;}
@@ -133,6 +166,8 @@ th.sortable::after{
   margin-left:.35rem;
   color:var(--fg-light);
 }
+
+tbody tr:nth-of-type(odd){background:#fafafa;}
 
 tbody td{
   padding:.32rem 0;
@@ -156,16 +191,8 @@ tbody td.ens.expand{white-space:normal;max-width:none;}
 tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
 
-/* ---------- output pane ------------------------------------------ */
-pre{
-  background:#111;
-  color:#0f0;
-  padding:1rem;
-  margin-top:2rem;
-  overflow-x:auto;
-  font-family:var(--mono);
-  font-size:.8rem;
-}
+/* ---------- output pane (hidden now) ----------------------------- */
+#output.hidden{display:none;}
 
 /* ---------- footer ------------------------------------------------ */
 footer{
