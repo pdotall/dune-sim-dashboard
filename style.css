@@ -108,14 +108,13 @@ input:checked + .slider:before{transform:translateX(28px);}
 .badge img{width:20px;height:20px;border-radius:50%;}
 .hidden{display:none !important;}
 
-/* ---------- focus ring ------------------------------------------- */
+/* ---------- focus ring & primary button ------------------------- */
 input:focus,select:focus,button:focus,
 .switch input:focus + .slider{
   outline:2px solid var(--brand);
   outline-offset:2px;
 }
 
-/* ---------- primary button --------------------------------------- */
 .run-btn{
   display:block;
   margin:2rem auto 0;
@@ -128,14 +127,6 @@ input:focus,select:focus,button:focus,
   font-weight:500;
 }
 .run-btn:hover{background:#0b5ed7;}
-
-/* ---------- paper wrapper ---------------------------------------- */
-.paper{
-  border:1px solid var(--rule);
-  border-radius:8px;
-  box-shadow:0 4px 12px rgba(0,0,0,.06);
-  padding:1rem 1rem 0;
-}
 
 /* ---------- table ------------------------------------------------ */
 .table-wrap{overflow-x:auto;}
@@ -191,8 +182,17 @@ tbody td.ens.expand{white-space:normal;max-width:none;}
 tbody td.ens .short{cursor:pointer;text-decoration:underline;}
 tbody td.ens .full{display:none;}
 
-/* ---------- output pane (hidden now) ----------------------------- */
-#output.hidden{display:none;}
+/* ---------- output pane (minimal) ------------------------------- */
+pre#output{
+  margin-top:1.5rem;
+  font-family:var(--mono);
+  font-size:.85rem;
+  color:var(--fg-light);
+  background:none;
+  padding:0;
+  border:none;
+  white-space:pre-wrap;
+}
 
 /* ---------- footer ------------------------------------------------ */
 footer{

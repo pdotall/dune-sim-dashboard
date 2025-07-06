@@ -5,41 +5,31 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>p’s-value</title>
 
-  <!-- typefaces -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-  <!-- local stylesheet -->
   <link rel="stylesheet" href="style.css">
-
-  <!-- ethers (used by app.js) -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
-  <!-- ---------- heading ---------------------------------------- -->
   <header>
     <h1>p’s-value</h1>
     <p class="tagline">A tiny tool for peeking at whale flows.</p>
   </header>
 
-
-  <!-- ---------- main canvas ------------------------------------ -->
   <main>
 
     <form id="queryForm">
 
-      <!-- address ------------------------------------------------ -->
       <div class="field">
         <label for="contract">Token contract address</label>
         <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
       </div>
 
-      <!-- live badge --------------------------------------------- -->
       <div id="tokenPreview" class="hidden badge">
         <img id="tokenLogo" alt="">
         <span id="tokenName"></span>
       </div>
 
-      <!-- chain --------------------------------------------------- -->
       <div class="field">
         <label for="chain">Chain</label>
         <select id="chain">
@@ -51,7 +41,6 @@
         </select>
       </div>
 
-      <!-- whales toggle ------------------------------------------ -->
       <div class="field switch-wrap">
         <label class="switch">
           <input type="checkbox" id="whaleToggle" checked>
@@ -60,7 +49,6 @@
         <span id="toggleText" class="toggle-desc">Active whales</span>
       </div>
 
-      <!-- time window -------------------------------------------- -->
       <fieldset>
         <legend>Time window</legend>
         <label><input type="radio" name="range" value="1"> 1&nbsp;d</label>
@@ -70,7 +58,6 @@
         <label><input type="radio" name="range" value="all"> All-time</label>
       </fieldset>
 
-      <!-- cap ----------------------------------------------------- -->
       <fieldset>
         <legend>Number of whales</legend>
         <label><input type="radio" name="cap" value="100"> 100</label>
@@ -79,13 +66,11 @@
         <label><input type="radio" name="cap" value="1000"> 1000</label>
       </fieldset>
 
-      <!-- primary action ----------------------------------------- -->
       <button type="submit" class="run-btn">Run&nbsp;query</button>
     </form>
 
-
-    <!-- results table ------------------------------------------- -->
-    <div class="table-wrap paper">
+    <!-- results -->
+    <div class="table-wrap">
       <table id="balTable" hidden>
         <thead>
           <tr>
@@ -103,13 +88,11 @@
       </table>
     </div>
 
-    <!-- status / errors (kept for JS; hidden by CSS) ------------- -->
-    <pre id="output" class="hidden">← results / errors appear here</pre>
+    <!-- live status / errors -->
+    <pre id="output">← results / errors appear here</pre>
 
   </main>
 
-
-  <!-- ---------- footer ----------------------------------------- -->
   <footer>
     <p class="by">made&nbsp;by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
 
@@ -120,7 +103,6 @@
     </ul>
   </footer>
 
-  <!-- logic -->
   <script src="app.js"></script>
 </body>
 </html>
