@@ -13,64 +13,71 @@
 
   <header>
     <h1>p’s-value</h1>
-    <p class="tagline">A tiny tool for peeking at whale's flows.</p>
+    <p class="tagline">A tiny tool for peeking at whale flows.</p>
   </header>
 
-  <main>
+  <main class="card">
     <form id="queryForm">
-      <!-- contract -->
-      <div class="field">
-        <label for="contract">Token contract address</label>
-        <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
+      <div class="grid">
+
+        <!-- contract -->
+        <div class="field">
+          <label for="contract">Token contract address</label>
+          <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
+        </div>
+
+        <!-- live badge -->
+        <div id="tokenPreview" class="hidden badge col-span-2">
+          <img id="tokenLogo" alt="">
+          <span id="tokenName"></span>
+        </div>
+
+        <!-- chain -->
+        <div class="field">
+          <label for="chain">Chain</label>
+          <select id="chain">
+            <option value="ethereum">Ethereum</option>
+            <option value="polygon">Polygon</option>
+            <option value="base">Base</option>
+            <option value="optimism">Optimism</option>
+            <option value="arbitrum">Arbitrum</option>
+          </select>
+        </div>
+
+        <!-- whales toggle -->
+        <div class="field switch-wrap">
+          <label class="switch">
+            <input type="checkbox" id="whaleToggle" checked>
+            <span class="slider"></span>
+          </label>
+          <span id="toggleText" class="toggle-desc">Active whales</span>
+        </div>
+
+        <!-- time window -->
+        <fieldset class="col-span-2">
+          <legend>Time window</legend>
+          <label><input type="radio" name="range" value="1"> 1 d</label>
+          <label><input type="radio" name="range" value="7" checked> 7 d</label>
+          <label><input type="radio" name="range" value="14"> 14 d</label>
+          <label><input type="radio" name="range" value="30"> 30 d</label>
+          <label><input type="radio" name="range" value="all"> All-time</label>
+        </fieldset>
+
+        <!-- number -->
+        <fieldset class="col-span-2">
+          <legend>Number of whales</legend>
+          <label><input type="radio" name="cap" value="100"> 100</label>
+          <label><input type="radio" name="cap" value="250" checked> 250</label>
+          <label><input type="radio" name="cap" value="500"> 500</label>
+          <label><input type="radio" name="cap" value="1000"> 1000</label>
+        </fieldset>
+
+        <!-- run -->
+        <div class="actions col-span-2">
+          <button type="submit">Run</button>
+          <small id="output" class="status"></small>
+        </div>
       </div>
-
-      <!-- live badge -->
-      <div id="tokenPreview" class="hidden badge">
-        <img id="tokenLogo" alt="">
-        <span id="tokenName"></span>
-      </div>
-
-      <!-- chain -->
-      <div class="field">
-        <label for="chain">Chain</label>
-        <select id="chain">
-          <option value="ethereum">Ethereum</option>
-          <option value="polygon">Polygon</option>
-          <option value="base">Base</option>
-          <option value="optimism">Optimism</option>
-          <option value="arbitrum">Arbitrum</option>
-        </select>
-      </div>
-
-      <!-- time window -->
-      <fieldset>
-        <legend>Time window</legend>
-        <label><input type="radio" name="range" value="1"> 1&nbsp;d</label>
-        <label><input type="radio" name="range" value="7" checked> 7&nbsp;d</label>
-        <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
-        <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
-        <label><input type="radio" name="range" value="all"> All-time</label>
-      </fieldset>
-
-      <!-- number of whales -->
-      <fieldset>
-        <legend>Number&nbsp;of whales</legend>
-        <label><input type="radio" name="cap" value="100"> 100</label>
-        <label><input type="radio" name="cap" value="250" checked> 250</label>
-        <label><input type="radio" name="cap" value="500"> 500</label>
-        <label><input type="radio" name="cap" value="1000"> 1000</label>
-      </fieldset>
-
-      <!-- whales toggle -->
-      <div class="field switch-wrap">
-        <label class="switch">
-          <input type="checkbox" id="whaleToggle" checked>
-          <span class="slider"></span>
-        </label>
-        <span id="toggleText" class="toggle-desc">Active whales</span>
-      </div>
-
-      <button type="submit">Run</button>
     </form>
 
     <!-- results -->
@@ -81,25 +88,23 @@
             <th>Owner</th>
             <th>ENS</th>
             <th class="sortable">Balance</th>
-            <th class="sortable">Tx&nbsp;In</th>
-            <th class="sortable">Amount&nbsp;In</th>
-            <th class="sortable">Tx&nbsp;Out</th>
-            <th class="sortable">Amount&nbsp;Out</th>
+            <th class="sortable">Tx In</th>
+            <th class="sortable">Amount In</th>
+            <th class="sortable">Tx Out</th>
+            <th class="sortable">Amount Out</th>
             <th>Token</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
-
-    <pre id="output">← results / errors appear here</pre>
   </main>
 
   <footer class="footer">
     <p class="by">made&nbsp;by&nbsp;<a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
 
     <div class="donate-card">
-      <p class="tip">If this helped you, consider&nbsp;donating</p>
+      <p class="tip">If this helped you, consider donating</p>
       <ul class="donations">
         <li><span>EVM</span><code>0x40aA1c4882F4D85CC43120ebE53c8cD1DC540e78</code></li>
         <li><span>Solana</span><code>83K1RCjK1oewjYdaLxgwWNXompBK2xt49tZv6nLQbXMW</code></li>

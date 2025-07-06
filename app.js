@@ -1,4 +1,4 @@
-/* =========  app.js  (cap picker + 1-day window + card UI) ========= */
+/* =========  app.js  (clean-UI version) ========= */
 
 const proxy="https://smart-money.pdotcapital.workers.dev/v1";
 
@@ -62,24 +62,20 @@ const ensMapPromise=(async()=>{
 })();
 
 /* ---------- DOM refs ---------- */
-const form=document.getElementById("queryForm"),
-      addrInput=document.getElementById("contract"),
-      tbl=document.getElementById("balTable"),
-      tbody=tbl.querySelector("tbody"),
-      status=document.getElementById("output"),
-      preview=document.getElementById("tokenPreview"),
-      tokenLogo=document.getElementById("tokenLogo"),
-      tokenName=document.getElementById("tokenName"),
-      whaleToggle=document.getElementById("whaleToggle"),
-      toggleText=document.getElementById("toggleText");
+const $=sel=>document.querySelector(sel);
+const form=$("#queryForm"),
+      tbl=$("#balTable"),tbody=tbl.querySelector("tbody"),
+      status=$("#output"),
+      preview=$("#tokenPreview"),tokenLogo=$("#tokenLogo"),tokenName=$("#tokenName"),
+      whaleToggle=$("#whaleToggle"),toggleText=$("#toggleText");
 
 whaleToggle.addEventListener("change",()=>toggleText.textContent=whaleToggle.checked?"Active whales":"All whales");
 
-/* ---------- live preview badge ---------- */
-addrInput.addEventListener("blur",async()=>{
-  const addr=addrInput.value.trim().toLowerCase();
-  if(!HEX40.test(addr))return preview.classList.add("hidden");
-  const chainKey=document.getElementById("chain").value,id=CHAINS[chainKey].id;
+/* ---------- live badge ---------- */
+$("#contract").addEventListener("blur",async e=>{
+  const addr=e.target.value.trim().toLowerCase();
+  if(!HEX40.test(addr)){preview.classList.add("hidden");return;}
+  const chainKey=$("#chain").value,id=CHAINS[chainKey].id;
   try{
     const info=(await fetch(`${proxy}/evm/token-info/${addr}?chain_ids=${id}`).then(r=>r.json())).tokens?.[0];
     if(!info)throw 0;
@@ -91,7 +87,7 @@ addrInput.addEventListener("blur",async()=>{
   }catch{preview.classList.add("hidden");}
 });
 
-/* ---------- main ---------- */
+/* ---------- main submit ------------------------------------------ */
 form.addEventListener("submit",async e=>{
   e.preventDefault();
   tbl.hidden=true;
@@ -99,10 +95,10 @@ form.addEventListener("submit",async e=>{
   status.textContent="⏳ fetching…";
 
   try{
-    const token=addrInput.value.trim().toLowerCase();
+    const token=$("#contract").value.trim().toLowerCase();
     if(!HEX40.test(token))throw new Error("Invalid contract address");
 
-    const chainKey=document.getElementById("chain").value,
+    const chainKey=$("#chain").value,
           {id:chainId,scan:scanBase}=CHAINS[chainKey];
 
     const fd=new FormData(form);
@@ -111,6 +107,7 @@ form.addEventListener("submit",async e=>{
     const activeOnly=whaleToggle.checked;
     const fromMs=days==="all"?0:Date.now()-(+days)*864e5;
 
+    /* holders + meta */
     const [holdersJson,meta]=await Promise.all([
       fetch(`${proxy}/evm/token-holders/${chainId}/${token}?limit=${cap}`).then(r=>r.json()),
       fetch(`${proxy}/evm/token-info/${token}?chain_ids=${chainId}`).then(r=>r.json())
@@ -126,7 +123,7 @@ form.addEventListener("submit",async e=>{
       h.wallet_address.toLowerCase(),{bal:BigInt(h.balance),inC:0,outC:0,inAmt:0n,outAmt:0n}));
 
     const queue=[...stats.keys()];
-    await Promise.all(Array.from({length:WORKERS},async()=>{
+    await Promise.all(Array.from({length:5},async()=>{
       while(queue.length){
         const addr=queue.pop(),s=stats.get(addr);
         const url=`${proxy}/evm/activity/${addr}?chain_ids=${chainId}&type=send,receive,mint,burn&limit=250`;
@@ -152,10 +149,7 @@ form.addEventListener("submit",async e=>{
       const tr=tbody.insertRow();
 
       const link=document.createElement("a");
-      link.href=scanBase+addr;
-      link.textContent=addr;
-      link.target="_blank";
-      link.rel="noopener";
+      link.href=scanBase+addr;link.textContent=addr;link.target="_blank";link.rel="noopener";
       tr.insertCell().appendChild(link);
 
       const ensCell=tr.insertCell();ensCell.className="ens";
@@ -164,9 +158,9 @@ form.addEventListener("submit",async e=>{
         ensCell.innerHTML=`<span class="short">${ens.slice(0,18)}…</span><span class="full">${ens.replace(/\s+/g,"<br>")}</span>`;
         ensCell.querySelector(".short").addEventListener("click",()=>{
           ensCell.classList.toggle("expand");
-          const open=ensCell.classList.contains("expand");
-          ensCell.querySelector(".short").style.display=open?"none":"inline";
-          ensCell.querySelector(".full").style.display=open?"inline":"none";
+          const o=ensCell.classList.contains("expand");
+          ensCell.querySelector(".short").style.display=o?"none":"inline";
+          ensCell.querySelector(".full").style.display=o?"inline":"none";
         });
       }else ensCell.textContent=ens;
 
@@ -183,6 +177,6 @@ form.addEventListener("submit",async e=>{
     status.textContent=`✅ ${rows.length} holders`;
   }catch(err){
     console.error(err);
-    status.textContent="❌ "+err;
+    status.textContent="❌ "+err.message||err;
   }
 });
