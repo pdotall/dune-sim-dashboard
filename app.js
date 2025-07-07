@@ -141,7 +141,7 @@ form.addEventListener("submit",async e=>{
     await Promise.all(Array.from({length:WORKERS},async()=>{
       while(queue.length){
         const addr=queue.pop(),s=stats.get(addr);
-        const url=`${proxy}/evm/activity/${addr}?chain_ids=${chainId}&type=send,receive,mint,burn&limit=300`;
+        const url = `${proxy}/evm/activity/${addr}?chain_ids=${chainId}&type=send,receive,mint,burn&limit=250&sort_by=block_time&sort_order=asc`;
         const r=await fetch(url); if(!r.ok){console.error(await r.text()); continue;}
         const {activity}=await r.json();
         activity.forEach(ev=>{
