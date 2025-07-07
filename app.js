@@ -1,5 +1,3 @@
-/* =========  app.js  (clean-UI + spinner) ========= */
-
 const proxy = "https://smart-money.pdotcapital.workers.dev/v1";
 
 /* ---------- chain meta ---------- */
@@ -117,7 +115,12 @@ form.addEventListener("submit",async e=>{
     const fd=new FormData(form);
     const days=fd.get("range"), cap=parseInt(fd.get("cap")||250,10);
     const activeOnly=whaleToggle.checked;
-    const fromMs=days==="all"?0:Date.now()-(+days)*864e5;
+
+    const now=new Date(), fromMs=(()=>{
+      if(days==="all") return 0;
+      const utcDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      return utcDay - (+days)*864e5;
+    })();
 
     /* holders + meta */
     const [holdersJson,meta]=await Promise.all([
@@ -134,11 +137,11 @@ form.addEventListener("submit",async e=>{
     holdersJson.holders.forEach(h=>stats.set(
       h.wallet_address.toLowerCase(),{bal:BigInt(h.balance),inC:0,outC:0,inAmt:0n,outAmt:0n}));
 
-    const queue=[...stats.keys()];
+    const queue=[...stats.keys()].sort();
     await Promise.all(Array.from({length:WORKERS},async()=>{
       while(queue.length){
         const addr=queue.pop(),s=stats.get(addr);
-        const url=`${proxy}/evm/activity/${addr}?chain_ids=${chainId}&type=send,receive,mint,burn&limit=250`;
+        const url=`${proxy}/evm/activity/${addr}?chain_ids=${chainId}&type=send,receive,mint,burn&limit=300`;
         const r=await fetch(url); if(!r.ok){console.error(await r.text()); continue;}
         const {activity}=await r.json();
         activity.forEach(ev=>{
