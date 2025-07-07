@@ -5,11 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>p’s-value</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <!-- favicon — place a 32×32 png (or svg) at /assets/spinner.png -->
+  <link rel="icon" href="assets/spinner.png" type="image/png" />
+
+  <!-- fonts & stylesheet -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- ethers for app.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
+
+  <!-- invisible until JavaScript shows it -->
+  <img src="assets/spinner.png" id="spinner" class="hidden" alt="Loading" />
 
   <header>
     <h1>p’s-value</h1>
@@ -22,11 +31,11 @@
 
       <div class="field">
         <label for="contract">Token contract address</label>
-        <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}">
+        <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
       </div>
 
       <div id="tokenPreview" class="hidden badge">
-        <img id="tokenLogo" alt="">
+        <img id="tokenLogo" alt="" />
         <span id="tokenName"></span>
       </div>
 
@@ -43,7 +52,7 @@
 
       <div class="field switch-wrap">
         <label class="switch">
-          <input type="checkbox" id="whaleToggle" checked>
+          <input type="checkbox" id="whaleToggle" checked />
           <span class="slider"></span>
         </label>
         <span id="toggleText" class="toggle-desc">Active whales</span>
@@ -51,25 +60,24 @@
 
       <fieldset>
         <legend>Time window</legend>
-        <label><input type="radio" name="range" value="1"> 1&nbsp;d</label>
-        <label><input type="radio" name="range" value="7" checked> 7&nbsp;d</label>
-        <label><input type="radio" name="range" value="14"> 14&nbsp;d</label>
-        <label><input type="radio" name="range" value="30"> 30&nbsp;d</label>
-        <label><input type="radio" name="range" value="all"> All-time</label>
+        <label><input type="radio" name="range" value="1"  /> 1&nbsp;d</label>
+        <label><input type="radio" name="range" value="7"  checked /> 7&nbsp;d</label>
+        <label><input type="radio" name="range" value="14" /> 14&nbsp;d</label>
+        <label><input type="radio" name="range" value="30" /> 30&nbsp;d</label>
+        <label><input type="radio" name="range" value="all" /> All-time</label>
       </fieldset>
 
       <fieldset>
         <legend>Number of whales</legend>
-        <label><input type="radio" name="cap" value="100"> 100</label>
-        <label><input type="radio" name="cap" value="250" checked> 250</label>
-        <label><input type="radio" name="cap" value="500"> 500</label>
-        <label><input type="radio" name="cap" value="1000"> 1000</label>
+        <label><input type="radio" name="cap" value="100"  /> 100</label>
+        <label><input type="radio" name="cap" value="250" checked /> 250</label>
+        <label><input type="radio" name="cap" value="500"  /> 500</label>
+        <label><input type="radio" name="cap" value="1000" /> 1000</label>
       </fieldset>
 
       <button type="submit" class="run-btn">Run&nbsp;query</button>
     </form>
 
-    <!-- results -->
     <div class="table-wrap">
       <table id="balTable" hidden>
         <thead>
@@ -88,7 +96,6 @@
       </table>
     </div>
 
-    <!-- live status / errors -->
     <pre id="output">← results / errors appear here</pre>
 
   </main>
