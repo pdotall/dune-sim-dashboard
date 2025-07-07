@@ -187,7 +187,7 @@ footer{
   text-align:center;
 }
 footer .by{margin:0;font-family:var(--mono);font-weight:500;}
-footer .tip{margin:1.2rem 0 .6rem;color:var(--fg-light);}
+footer .tip{margin:1.2rem 0 .6rem;color:var(--fg-light); font-size: 0.85rem;}
 footer .donations{list-style:none;padding:0;margin:0;}
 footer .donations li{
   display:flex;
