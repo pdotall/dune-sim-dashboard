@@ -187,7 +187,7 @@ form.addEventListener("submit",async e=>{
 
     enableSorting(tbl);
     tbl.hidden=false;
-    status.textContent=`✅ ${rows.length} holders`;
+    status.textContent=`🐳 ${rows.length} whales`;
     hideSpinner();
   }catch(err){
     console.error(err);
