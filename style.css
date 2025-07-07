@@ -207,11 +207,11 @@ footer code{
   width:32px;height:32px;          /* adapt if your asset differs */
   border-radius:50%;
   pointer-events:none;
-  transform:translate(-35%,-75%);
+  transform:translate(-10%,-90%);
   animation:spin .9s linear infinite;
   z-index:9999;
 }
 @keyframes spin{
-  from{transform:translate(-35%,-75%) rotate(0deg);}
-  to  {transform:translate(-35%,-75%) rotate(360deg);}
+  from{transform:translate(-10%,-90%) rotate(0deg);}
+  to  {transform:translate(-10%,-90%) rotate(360deg);}
 }
