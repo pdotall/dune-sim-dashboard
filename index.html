@@ -5,31 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>p’s-value</title>
 
-  <!-- favicon — place a 32×32 png (or svg) at /assets/spinner.png -->
   <link rel="icon" href="assets/spinner.png" type="image/png" />
-
-  <!-- fonts & stylesheet -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-
-  <!-- ethers for app.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script defer data-domain="psvalue.xyz" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
 
-  <!-- invisible until JavaScript shows it -->
   <img src="assets/spinner.png" id="spinner" class="hidden" alt="Loading" />
 
   <header>
+    <nav class="tabs">
+      <a href="index.html" class="tab active">Whale Flows</a>
+      <a href="timezone.html" class="tab">Timezone Doxxing</a>
+    </nav>
     <h1>p’s-value</h1>
     <p class="tagline">A tiny tool for peeking at whale flows.</p>
   </header>
 
   <main>
-
     <form id="queryForm">
-
       <div class="field">
         <label for="contract">Token contract address</label>
         <input id="contract" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
@@ -98,12 +94,10 @@
     </div>
 
     <pre id="output">results will appear here ser</pre>
-
   </main>
 
   <footer>
     <p class="by">made&nbsp;by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
-
     <p class="tip">If this helped you, consider donating</p>
     <ul class="donations">
       <li><span>EVM</span> <code>0x40aA1c4882F4D85CC43120ebE53c8cD1DC540e78</code></li>
