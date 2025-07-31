@@ -3,20 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Timezone Doxxing – p’s-value</title>
+  <title>Timezone Doxxing</title>
+
+  <link rel="icon" href="assets/spinner.png" type="image/png" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer data-domain="psvalue.xyz" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
 
   <header>
-    <nav class="tabs">
-      <a href="index.html" class="tab">Whale Flows</a>
-      <a href="timezone.html" class="tab active">Timezone Doxxing</a>
-    </nav>
     <h1>Timezone Doxxing</h1>
-    <p class="tagline">Coming soon…</p>
+    <p class="tagline">Guess a wallet’s timezone by activity patterns.</p>
   </header>
 
+  <main>
+    <form id="tzForm">
+      <div class="field">
+        <label for="address">Wallet address</label>
+        <input id="address" placeholder="0x…" required pattern="0x[a-fA-F0-9]{40}" />
+      </div>
+      <button type="submit" class="run-btn">Analyze</button>
+    </form>
+
+    <canvas id="tzChart" style="margin-top: 2rem; max-width: 100%; height: 400px;"></canvas>
+    <pre id="output">results will appear here ser</pre>
+  </main>
+
+  <footer>
+    <p class="by">made&nbsp;by <a href="https://x.com/pdotal" target="_blank" rel="noopener">pdot</a></p>
+  </footer>
+
+  <img src="assets/spinner.png" id="spinner" class="hidden" alt="Loading" />
+  <script src="timezone.js"></script>
 </body>
 </html>
